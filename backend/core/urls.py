@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/',   include('lms.urls')),
+    path('api/payments/', include('payments.urls')),
 ]
 
 # Serve uploaded media files in development (DEBUG=True)

@@ -28,6 +28,7 @@ INSTALLED_APPS = [
 
     # Our app
     'lms',
+    'payments',
 ]
 
 # ─── Middleware ────────────────────────────────────────────────────────────────
@@ -159,3 +160,17 @@ CORS_ALLOW_HEADERS = [
 
 DATA_UPLOAD_MAX_MEMORY_SIZE  = 10 * 1024 * 1024   # 10 MB in-memory limit
 FILE_UPLOAD_MAX_MEMORY_SIZE  = 10 * 1024 * 1024   # 10 MB before temp file
+
+# ─── M-Pesa Daraja Configuration ─────────────────────────────────────────────
+
+# Get these from https://developer.safaricom.co.ke/
+MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
+MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
+MPESA_SHORTCODE = config('MPESA_SHORTCODE', default='')
+MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
+MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='https://yourdomain.com/api/payments/callback/')
+MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT', default='sandbox')  # 'sandbox' or 'production'
+
+# B2C Settings (for refunds)
+MPESA_B2C_INITIATOR_NAME = config('MPESA_B2C_INITIATOR_NAME', default='')
+MPESA_B2C_INITIATOR_PASSWORD = config('MPESA_B2C_INITIATOR_PASSWORD', default='')
