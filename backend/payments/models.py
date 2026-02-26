@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4817196 (Add backend requirements.txt and local changes)
 from django.db import models
 
 class MpesaTransaction(models.Model):
@@ -17,6 +20,7 @@ class MpesaTransaction(models.Model):
     updated_at          = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+<<<<<<< HEAD
         return f"{self.phone} | {self.amount} KES | {self.status}"
 =======
 from django.db import models
@@ -148,3 +152,6 @@ class MpesaConfiguration(models.Model):
     def __str__(self):
         return f"M-Pesa Config: {self.name} ({self.environment})"
 >>>>>>> 77cb46cef5c804655b1de1f6594bb68686953203
+=======
+        return f"{self.phone} | {self.amount} KES | {self.status}"
+>>>>>>> 4817196 (Add backend requirements.txt and local changes)

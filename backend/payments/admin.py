@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from django.contrib import admin
 
 # Register your models here.
@@ -60,3 +61,8 @@ class MpesaConfigurationAdmin(admin.ModelAdmin):
         }),
     )
 >>>>>>> 77cb46cef5c804655b1de1f6594bb68686953203
+=======
+from django.contrib import admin
+
+# Register your models here.
+>>>>>>> 4817196 (Add backend requirements.txt and local changes)

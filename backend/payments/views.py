@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 4817196 (Add backend requirements.txt and local changes)
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -110,6 +113,7 @@ class MpesaStatusView(APIView):
             )
             return Response({"status": tx.status, "receipt": tx.mpesa_receipt})
         except MpesaTransaction.DoesNotExist:
+<<<<<<< HEAD
             return Response({"error": "Transaction not found"}, status=404)
 =======
 import logging
@@ -504,3 +508,6 @@ class MpesaConfirmationView(APIView):
             'ResultDesc': 'Confirmed'
         })
 >>>>>>> 77cb46cef5c804655b1de1f6594bb68686953203
+=======
+            return Response({"error": "Transaction not found"}, status=404)
+>>>>>>> 4817196 (Add backend requirements.txt and local changes)
