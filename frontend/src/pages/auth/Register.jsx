@@ -60,13 +60,13 @@ const COUNTRIES = [
 
 // --- Pricing data -------------------------------------------------------------
 const LEVEL_PRICES = {
-  'A1 — Complete Beginner':  { courseId: 1, usdPrice: 0,   usdAfterTrial: 250, label: 'Free Trial', period: '7 days free, then $250/module' },
-  'A2 — Elementary':         { courseId: 2, usdPrice: 300, label: 'A2 Module',  period: 'per module (~2 months)' },
-  'B1 — Intermediate':       { courseId: 3, usdPrice: 350, label: 'B1 Module',  period: 'per module (~2 months)' },
-  'B2 — Upper-Intermediate': { courseId: 4, usdPrice: 400, label: 'B2 Module',  period: 'per module (~2 months)' },
-  'C1 — Advanced':           { courseId: 5, usdPrice: 450, label: 'C1 Module',  period: 'per module (~2 months)' },
-  'C2 — Mastery':            { courseId: 6, usdPrice: 500, label: 'C2 Module',  period: 'per module (~2 months)' },
-  "I'm not sure — take the placement test": { courseId: null, usdPrice: 0, label: 'Free', period: 'placement test first' },
+  'A1 — Complete Beginner':                 { usdPrice: 0,   usdAfterTrial: 250, label: 'Free Trial', period: '7 days free, then $250/module' },
+  'A2 — Elementary':                        { usdPrice: 300, label: 'A2 Module',  period: 'per module (~2 months)' },
+  'B1 — Intermediate':                      { usdPrice: 350, label: 'B1 Module',  period: 'per module (~2 months)' },
+  'B2 — Upper-Intermediate':                { usdPrice: 400, label: 'B2 Module',  period: 'per module (~2 months)' },
+  'C1 — Advanced':                          { usdPrice: 450, label: 'C1 Module',  period: 'per module (~2 months)' },
+  'C2 — Mastery':                           { usdPrice: 500, label: 'C2 Module',  period: 'per module (~2 months)' },
+  "I'm not sure — take the placement test": { usdPrice: 0,   label: 'Free',       period: 'placement test first' },
 }
 const CEFR_LEVELS = Object.keys(LEVEL_PRICES)
 
@@ -214,7 +214,7 @@ const StepIndicator = ({ current, total, labels }) => (
           <div style={{ width:'28px', height:'28px', borderRadius:'50%', background:i<current?'#10B981':i===current?'#3B82F6':'rgba(255,255,255,0.07)', border:`2px solid ${i<current?'#10B981':i===current?'#3B82F6':'rgba(255,255,255,0.12)'}`, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.35s', flexShrink:0 }}>
             {i<current?<Check size={13} color="#fff" strokeWidth={3}/>:<span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'12px', fontWeight:'700', color:i===current?'#fff':'rgba(255,255,255,0.28)' }}>{i+1}</span>}
           </div>
-          {labels&&<span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9.5px', fontWeight:'600', color:i===current?'rgba(255,255,255,0.65)':'rgba(255,255,255,0.22)', letterSpacing:'0.3px', whiteSpace:'nowrap' }}>{labels[i]}</span>}
+          {labels&&<span className="step-label" style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9.5px', fontWeight:'600', color:i===current?'rgba(255,255,255,0.65)':'rgba(255,255,255,0.22)', letterSpacing:'0.3px', whiteSpace:'nowrap' }}>{labels[i]}</span>}
         </div>
         {i<total-1&&<div style={{ width:'36px', height:'2px', background:i<current?'#10B981':'rgba(255,255,255,0.08)', transition:'background 0.35s', borderRadius:'1px', marginBottom:labels?'14px':'0' }}/>}
       </div>
@@ -322,15 +322,14 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phone_number: raw,
-          amount:       pricing.usdPrice,
-          course_id:    pricing.courseId,
+          phone:  raw,
+          amount: getRawKes(pricing.usdPrice),
+          level:  level,
         }),
       })
 
       if (!res.ok) {
         const err = await res.json()
-        console.log('Payment 400 error:', JSON.stringify(err, null, 2))  // ← add this
         throw new Error(err.error || 'Failed to send STK push. Please try again.')
       }
 
@@ -440,7 +439,7 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
             After 7 days: <strong style={{ color:'rgba(255,255,255,0.6)' }}>{afterTrialDisplay}/module</strong> — or stay free and take the placement test anytime.
           </div>
         </div>
-        <div style={{ display:'flex', gap:'10px' }}>
+        <div className="checkout-actions" style={{ display:'flex', gap:'10px' }}>
           <button onClick={onBack} style={{ flex:1, padding:'14px', background:'transparent', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'12px', color:'rgba(255,255,255,0.55)', fontFamily:"'DM Sans',sans-serif", fontSize:'15px', fontWeight:'600', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'6px' }}><ChevronLeft size={16} strokeWidth={2}/> Back</button>
           <button onClick={onSuccess} style={{ flex:2, padding:'14px', background:'linear-gradient(135deg,#059669,#10B981)', border:'none', borderRadius:'12px', color:'#fff', fontFamily:"'DM Sans',sans-serif", fontSize:'15px', fontWeight:'700', cursor:'pointer', boxShadow:'0 8px 28px rgba(16,185,129,0.28)', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}><Check size={15} strokeWidth={2.5}/> Activate Free Trial</button>
         </div>
@@ -476,7 +475,7 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
       {/* Payment method selector */}
       <div style={{ marginBottom:'20px' }}>
         <div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'11px', fontWeight:'700', color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'2px', marginBottom:'12px' }}>Payment Method</div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
+        <div className="payment-method-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
           {[{id:'mpesa',label:'M-Pesa',sub:'Safaricom STK Push',icon:<MpesaLogo size={28}/>},{id:'card',label:'Card',sub:'Visa / Mastercard',icon:<CreditCard size={24} color="#60A5FA" strokeWidth={1.8}/>}].map(m=>(
             <div key={m.id} onClick={()=>{setMethod(m.id);setErrors({});resetMpesa();setCardState('idle')}}
               style={{ padding:'14px 16px', borderRadius:'12px', border:`1.5px solid ${method===m.id?(m.id==='mpesa'?'#00A651':'#3B82F6'):'rgba(255,255,255,0.09)'}`, background:method===m.id?(m.id==='mpesa'?'rgba(0,166,81,0.08)':'rgba(59,130,246,0.07)'):'rgba(255,255,255,0.025)', cursor:'pointer', transition:'all 0.22s', display:'flex', alignItems:'center', gap:'12px' }}>
@@ -622,10 +621,7 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
         <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'11.5px', color:'rgba(255,255,255,0.35)', lineHeight:'1.5' }}>256-bit SSL encrypted · PCI-DSS compliant · Your data is never stored</span>
       </div>
 
-      <div style={{ display:'flex', gap:'10px' }}>
-        <button onClick={onBack} style={{ flex:1, padding:'14px', background:'transparent', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'12px', color:'rgba(255,255,255,0.55)', fontFamily:"'DM Sans',sans-serif", fontSize:'15px', fontWeight:'600', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'6px' }}>
-          <ChevronLeft size={16} strokeWidth={2}/> Back
-        </button>
+      <div className="checkout-actions" style={{ display:'flex', gap:'10px' }}>
         {method === 'mpesa' && mpesaState === 'idle' && (
           <button onClick={sendMpesa} style={{ flex:2, padding:'14px', background:'linear-gradient(135deg,#007A3D,#00A651)', border:'none', borderRadius:'12px', color:'#fff', fontFamily:"'DM Sans',sans-serif", fontSize:'15px', fontWeight:'700', cursor:'pointer', boxShadow:'0 8px 28px rgba(0,166,81,0.28)', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
             <Zap size={15} strokeWidth={2.5}/> Send STK Push · {displayPrice}
@@ -824,14 +820,39 @@ export default function Register() {
         input:-webkit-autofill { -webkit-box-shadow: 0 0 0px 1000px #0d1424 inset !important; -webkit-text-fill-color: #fff !important; }
         select { appearance: none; }
         select option { background: #0d1424; color: #fff; }
+
+        /* ── Mobile ── */
+        @media (max-width: 768px) {
+          .register-grid { grid-template-columns: 1fr !important; }
+          .register-left  { display: none !important; }
+          .register-right {
+            padding: 28px 20px 48px !important;
+            align-items: flex-start !important;
+          }
+          .register-right > div { max-width: 100% !important; }
+          .mobile-header {
+            display: flex !important;
+          }
+          .name-grid { grid-template-columns: 1fr !important; }
+          .goal-grid  { grid-template-columns: 1fr !important; }
+          .payment-method-grid { grid-template-columns: 1fr 1fr !important; }
+          .checkout-actions { flex-direction: column !important; }
+          .checkout-actions button { flex: unset !important; width: 100% !important; }
+          .card-expiry-grid { grid-template-columns: 1fr 1fr !important; }
+          .step-label { display: none !important; }
+        }
+
+        @media (max-width: 400px) {
+          .payment-method-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {showToast && <EmailToast email={toastEmail} onDone={() => setShowToast(false)} />}
 
-      <div style={{ minHeight:'100vh', display:'grid', gridTemplateColumns:'1fr 1fr', overflow:'hidden' }}>
+      <div className="register-grid" style={{ minHeight:'100vh', display:'grid', gridTemplateColumns:'1fr 1fr', overflow:'hidden' }}>
 
-        {/* LEFT PANEL */}
-        <div style={{ position:'relative', background:'linear-gradient(145deg,#06090F 0%,#0D1B35 60%,#06090F 100%)', display:'flex', flexDirection:'column', justifyContent:'space-between', padding:'48px', overflow:'hidden' }}>
+        {/* LEFT PANEL — hidden on mobile via CSS */}
+        <div className="register-left" style={{ position:'relative', background:'linear-gradient(145deg,#06090F 0%,#0D1B35 60%,#06090F 100%)', display:'flex', flexDirection:'column', justifyContent:'space-between', padding:'48px', overflow:'hidden' }}>
           <FloatingOrb size="500px" x="-20%" y="-15%" color="radial-gradient(circle,rgba(27,58,107,0.65),transparent)"  blur="80px" duration="9s"/>
           <FloatingOrb size="350px" x="45%"  y="35%"  color="radial-gradient(circle,rgba(59,130,246,0.18),transparent)" blur="70px" duration="12s"/>
           <FloatingOrb size="250px" x="5%"   y="70%"  color="radial-gradient(circle,rgba(16,185,129,0.12),transparent)" blur="60px" duration="8s"/>
@@ -878,8 +899,17 @@ export default function Register() {
         </div>
 
         {/* RIGHT PANEL */}
-        <div style={{ background:'#06090F', display:'flex', alignItems:'center', justifyContent:'center', padding:'48px', overflowY:'auto' }}>
+        <div className="register-right" style={{ background:'#06090F', display:'flex', alignItems:'center', justifyContent:'center', padding:'48px', overflowY:'auto' }}>
           <div className="fade-up" style={{ width:'100%', maxWidth:'448px' }}>
+
+            {/* Mobile-only top bar */}
+            <div className="mobile-header" style={{ display:'none', alignItems:'center', justifyContent:'space-between', marginBottom:'28px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:'8px', cursor:'pointer' }} onClick={()=>navigate('/')}>
+                <div style={{ width:'32px', height:'32px', borderRadius:'8px', background:'linear-gradient(135deg,#1B3A6B,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Playfair Display',serif", fontWeight:'800', fontSize:'16px', color:'#fff' }}>G</div>
+                <span style={{ fontFamily:"'Playfair Display',serif", fontWeight:'700', fontSize:'16px', color:'#fff' }}>German School Online</span>
+              </div>
+              <CurrencyToggle currency={currency} onChange={setCurrency}/>
+            </div>
 
             <div style={{ marginBottom:'24px' }}>
               <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:'30px', fontWeight:'800', color:'#fff', marginBottom:'7px' }}>Create your account</h1>
@@ -912,7 +942,7 @@ export default function Register() {
                   <div style={{ flex:1, height:'1px', background:'rgba(255,255,255,0.07)' }}/>
                 </div>
 
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'13px', marginBottom:'13px' }}>
+                <div className="name-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'13px', marginBottom:'13px' }}>
                   <InputField label="First name" value={form.firstName} onChange={e=>update('firstName',e.target.value)} placeholder="Anna"   icon={<User size={15} strokeWidth={2}/>} error={errors.firstName}/>
                   <InputField label="Last name"  value={form.lastName}  onChange={e=>update('lastName', e.target.value)} placeholder="Müller" icon={<User size={15} strokeWidth={2}/>} error={errors.lastName}/>
                 </div>
@@ -985,7 +1015,7 @@ export default function Register() {
                 <div style={{ marginBottom:'16px' }}>
                   <label style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'13px', fontWeight:'600', color:'rgba(255,255,255,0.55)', display:'block', marginBottom:'10px' }}>Primary goal <span style={{ color:'#EF4444' }}>*</span></label>
                   {errors.goal&&<div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'12px', color:'#EF4444', marginBottom:'8px' }}>{errors.goal}</div>}
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'9px' }}>
+                  <div className="goal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'9px' }}>
                     {GOALS.map(g=>(
                       <div key={g.id} onClick={()=>update('goal',g.id)} style={{ padding:'13px', borderRadius:'11px', border:`1px solid ${form.goal===g.id?'rgba(59,130,246,0.55)':'rgba(255,255,255,0.08)'}`, background:form.goal===g.id?'rgba(59,130,246,0.09)':'rgba(255,255,255,0.02)', cursor:'pointer', display:'flex', alignItems:'center', gap:'9px', transition:'all 0.2s' }}>
                         <span style={{ color:form.goal===g.id?'#3B82F6':'rgba(255,255,255,0.32)', flexShrink:0 }}>{g.icon}</span>
@@ -1005,7 +1035,7 @@ export default function Register() {
                 </div>
                 {errors.agreeTerms&&<div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'12px', color:'#EF4444', marginTop:'4px', marginLeft:'32px' }}>{errors.agreeTerms}</div>}
 
-                <div style={{ display:'flex', gap:'10px', marginTop:'24px' }}>
+                <div className="checkout-actions" style={{ display:'flex', gap:'10px', marginTop:'24px' }}>
                   <button onClick={()=>setStep(1)} style={{ flex:1, padding:'14px', background:'transparent', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'12px', color:'rgba(255,255,255,0.55)', fontFamily:"'DM Sans',sans-serif", fontSize:'15px', fontWeight:'600', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'6px' }}>
                     <ChevronLeft size={16} strokeWidth={2}/> Back
                   </button>
