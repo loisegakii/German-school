@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-from django.contrib import admin
-
-# Register your models here.
-=======
 from django.contrib import admin
 from .models import Payment, PaymentCallback, MpesaConfiguration
 
@@ -60,9 +54,3 @@ class MpesaConfigurationAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
     )
->>>>>>> 77cb46cef5c804655b1de1f6594bb68686953203
-=======
-from django.contrib import admin
-
-# Register your models here.
->>>>>>> 4817196 (Add backend requirements.txt and local changes)

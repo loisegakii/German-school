@@ -9,6 +9,8 @@
  *     Safaricom confirms PIN was entered and payment completed (ResultCode 0)
  *  5. Cancelled / failed / timed-out states each show a distinct error message
  *  6. Polling is fully cleaned up on unmount (no memory leaks / ghost polls)
+ *  7. Authorization headers removed from payment calls — user is not yet
+ *     registered at this point, so no token exists or is needed.
  *
  * DEPENDENCIES:
  *   npm install @react-oauth/google
@@ -16,8 +18,8 @@
  * BACKEND ENDPOINTS REQUIRED:
  *   POST /api/auth/google/
  *   POST /api/auth/send-welcome-email/
- *   POST /api/payments/mpesa/initiate/       <- Daraja STK Push
- *   GET  /api/payments/mpesa/status/:id      <- poll for PIN confirmation
+ *   POST /api/payments/mpesa/initiate/       <- Daraja STK Push (AllowAny)
+ *   GET  /api/payments/mpesa/status/:id      <- poll for PIN confirmation (AllowAny)
  *
  * WRAP YOUR APP:
  *   import { GoogleOAuthProvider } from '@react-oauth/google'
@@ -58,13 +60,13 @@ const COUNTRIES = [
 
 // --- Pricing data -------------------------------------------------------------
 const LEVEL_PRICES = {
-  'A1 — Complete Beginner':                 { usdPrice: 0,   usdAfterTrial: 250, label: 'Free Trial', period: '7 days free, then $250/module' },
-  'A2 — Elementary':                        { usdPrice: 300, label: 'A2 Module',  period: 'per module (~2 months)' },
-  'B1 — Intermediate':                      { usdPrice: 350, label: 'B1 Module',  period: 'per module (~2 months)' },
-  'B2 — Upper-Intermediate':                { usdPrice: 400, label: 'B2 Module',  period: 'per module (~2 months)' },
-  'C1 — Advanced':                          { usdPrice: 450, label: 'C1 Module',  period: 'per module (~2 months)' },
-  'C2 — Mastery':                           { usdPrice: 500, label: 'C2 Module',  period: 'per module (~2 months)' },
-  "I'm not sure — take the placement test": { usdPrice: 0,   label: 'Free',       period: 'placement test first' },
+  'A1 — Complete Beginner':  { courseId: 1, usdPrice: 0,   usdAfterTrial: 250, label: 'Free Trial', period: '7 days free, then $250/module' },
+  'A2 — Elementary':         { courseId: 2, usdPrice: 300, label: 'A2 Module',  period: 'per module (~2 months)' },
+  'B1 — Intermediate':       { courseId: 3, usdPrice: 350, label: 'B1 Module',  period: 'per module (~2 months)' },
+  'B2 — Upper-Intermediate': { courseId: 4, usdPrice: 400, label: 'B2 Module',  period: 'per module (~2 months)' },
+  'C1 — Advanced':           { courseId: 5, usdPrice: 450, label: 'C1 Module',  period: 'per module (~2 months)' },
+  'C2 — Mastery':            { courseId: 6, usdPrice: 500, label: 'C2 Module',  period: 'per module (~2 months)' },
+  "I'm not sure — take the placement test": { courseId: null, usdPrice: 0, label: 'Free', period: 'placement test first' },
 }
 const CEFR_LEVELS = Object.keys(LEVEL_PRICES)
 
@@ -256,18 +258,8 @@ function GoogleSignUpButton({ onSuccess, onError, loading }) {
 
 // --- Payment Step -------------------------------------------------------------
 //
-// KEY FIX: Real Daraja STK Push + proper PIN polling
-//
-// Previously sendMpesa() used setTimeout to fake success after 4s, meaning the
-// user was never actually prompted for their PIN on their phone. Now:
-//   1. POST /api/payments/mpesa/initiate/ -> backend triggers real Daraja STK push
-//   2. Safaricom sends a PIN prompt to the user's physical phone
-//   3. We poll /api/payments/mpesa/status/:id every 3s
-//   4. ONLY when status === 'completed' (Safaricom callback confirmed, ResultCode 0)
-//      do we call onSuccess() and advance the registration
-//   5. 'cancelled' (user dismissed prompt) and 'failed' (wrong PIN etc.)
-//      show specific human-readable error messages with a "Try Again" button
-//   6. All intervals/timeouts stored in refs, cleaned up on unmount
+// No Authorization headers on payment calls — the user does not exist yet
+// at this point in the registration flow. The backend endpoints use AllowAny.
 //
 function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, prefillPhone }) {
   const pricing     = LEVEL_PRICES[level] ?? { usdPrice: 0, label: 'Free', period: '' }
@@ -284,7 +276,6 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
 
   const displayPrice = formatPrice(pricing.usdPrice, currency)
 
-  // Refs so we can clean up from anywhere (including unmount)
   const pollRef      = useRef(null)
   const countdownRef = useRef(null)
   const timeoutRef   = useRef(null)
@@ -308,7 +299,7 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
     setMpesaError('')
   }
 
-  // Real Daraja STK Push
+  // Real Daraja STK Push — no Authorization header, user not registered yet
   const sendMpesa = async () => {
     const e = {}
     const raw = mpesa.phone.replace(/\s/g, '')
@@ -321,31 +312,31 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
 
     setErrors({})
     setMpesaError('')
-    setMpesaState('pushing')   // brief "Sending STK Push..." spinner
+    setMpesaState('pushing')
 
     try {
-      // Step 1: Hit your backend which calls Daraja
+      // No Authorization header — user hasn't registered yet, no token exists
       const res = await fetch('/api/payments/mpesa/initiate/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: JSON.stringify({
-          phone:  raw,
-          amount: getRawKes(pricing.usdPrice),
-          level:  level,
+          phone_number: raw,
+          amount:       pricing.usdPrice,
+          course_id:    pricing.courseId,
         }),
       })
 
       if (!res.ok) {
         const err = await res.json()
+        console.log('Payment 400 error:', JSON.stringify(err, null, 2))  // ← add this
         throw new Error(err.error || 'Failed to send STK push. Please try again.')
       }
 
       const { checkout_request_id } = await res.json()
 
-      // Step 2: Daraja has sent the PIN prompt to the user's phone
+      // Daraja has sent the PIN prompt to the user's phone
       setMpesaState('waiting')
       let t = 90
       setTimer(t)
@@ -361,34 +352,32 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
         }
       }, 1000)
 
-      // Step 3: Poll backend every 3s for Safaricom callback confirmation
+      // Poll backend every 3s for Safaricom callback confirmation
+      // No Authorization header — same reason as above
       pollRef.current = setInterval(async () => {
         try {
           const statusRes = await fetch(
-            `/api/payments/mpesa/status/${checkout_request_id}/`,
-            { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } }
+            `/api/payments/mpesa/status/${checkout_request_id}/`
+            // No headers needed — AllowAny endpoint
           )
           const { status: txStatus } = await statusRes.json()
 
           if (txStatus === 'completed') {
-            // User entered correct PIN — Safaricom confirmed payment
             stopAll()
             setMpesaState('done')
             setTimeout(onSuccess, 1200)
 
           } else if (txStatus === 'cancelled') {
-            // User pressed Cancel on the STK prompt
             stopAll()
             setMpesaState('error')
             setMpesaError('You cancelled the M-Pesa prompt. Press "Try Again" to resend.')
 
           } else if (txStatus === 'failed') {
-            // Wrong PIN, insufficient balance, etc.
             stopAll()
             setMpesaState('error')
             setMpesaError('Payment failed. This could be a wrong PIN or insufficient M-Pesa balance.')
           }
-          // status === 'pending' -> keep polling
+          // status === 'pending' or 'initiated' -> keep polling
         } catch { /* network glitch on poll — keep trying */ }
       }, 3000)
 
@@ -505,7 +494,6 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
       {method === 'mpesa' && (
         <div style={{ marginBottom:'20px' }}>
 
-          {/* idle — phone input */}
           {mpesaState === 'idle' && (
             <>
               <div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'11px', fontWeight:'700', color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'2px', marginBottom:'12px' }}>Safaricom Number</div>
@@ -523,7 +511,6 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
             </>
           )}
 
-          {/* pushing — brief spinner while backend contacts Daraja */}
           {mpesaState === 'pushing' && (
             <div style={{ textAlign:'center', padding:'28px 0' }}>
               <div style={{ width:'56px', height:'56px', borderRadius:'50%', background:'rgba(0,166,81,0.1)', border:'2px solid rgba(0,166,81,0.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
@@ -534,7 +521,6 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
             </div>
           )}
 
-          {/* waiting — user must enter PIN on their physical phone */}
           {mpesaState === 'waiting' && (
             <div style={{ textAlign:'center', padding:'24px 0' }}>
               <div style={{ width:'64px', height:'64px', borderRadius:'50%', background:'rgba(0,166,81,0.12)', border:'2px solid rgba(0,166,81,0.35)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px' }}>
@@ -555,7 +541,6 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
             </div>
           )}
 
-          {/* done — Safaricom callback confirmed payment */}
           {mpesaState === 'done' && (
             <div style={{ textAlign:'center', padding:'20px 0' }}>
               <div style={{ width:'56px', height:'56px', borderRadius:'50%', background:'rgba(16,185,129,0.15)', border:'2px solid #10B981', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
@@ -566,7 +551,6 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
             </div>
           )}
 
-          {/* error — cancelled, failed, wrong PIN, timed out */}
           {mpesaState === 'error' && (
             <div style={{ textAlign:'center', padding:'20px 0' }}>
               <div style={{ width:'56px', height:'56px', borderRadius:'50%', background:'rgba(239,68,68,0.1)', border:'2px solid rgba(239,68,68,0.4)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
@@ -673,8 +657,8 @@ export default function Register() {
 
   const [form, setForm] = useState({
     role: 'student', firstName: '', lastName: '',
-    phone: '',     // NEW — collected Step 1, pre-fills M-Pesa in Step 3
-    country: '',   // NEW — collected Step 1
+    phone: '',
+    country: '',
     email: '', password: '', confirmPassword: '',
     cefrLevel: '', goal: '', agreeTerms: false,
   })
@@ -914,7 +898,7 @@ export default function Register() {
               </div>
             )}
 
-            {/* STEP 1 — Personal details + phone + country */}
+            {/* STEP 1 — Personal details */}
             {step === 1 && (
               <div className="fade-up">
                 <div style={{ fontFamily:"'Playfair Display',serif", fontSize:'20px', fontWeight:'700', color:'#fff', marginBottom:'5px' }}>Personal details</div>
@@ -935,8 +919,6 @@ export default function Register() {
 
                 <div style={{ display:'flex', flexDirection:'column', gap:'13px' }}>
                   <InputField label="Email address" type="email" value={form.email} onChange={e=>update('email',e.target.value)} placeholder="you@example.com" icon={<Mail size={15} strokeWidth={2}/>} error={errors.email}/>
-
-                  {/* NEW: Phone number */}
                   <InputField
                     label="Phone number (optional)"
                     type="tel"
@@ -947,8 +929,6 @@ export default function Register() {
                     error={errors.phone}
                     hint="Pre-fills M-Pesa at checkout — you can edit it there"
                   />
-
-                  {/* NEW: Country / Region */}
                   <div style={{ display:'flex', flexDirection:'column', gap:'7px' }}>
                     <label style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'13px', fontWeight:'600', color:'rgba(255,255,255,0.6)', letterSpacing:'0.3px' }}>Country / Region</label>
                     <div style={{ position:'relative' }}>
@@ -961,7 +941,6 @@ export default function Register() {
                       <span style={{ position:'absolute', right:'14px', top:'50%', transform:'translateY(-50%)', pointerEvents:'none', color:'rgba(255,255,255,0.3)', display:'flex' }}><ChevronDown size={15} strokeWidth={2}/></span>
                     </div>
                   </div>
-
                   <InputField label="Password" type="password" value={form.password} onChange={e=>update('password',e.target.value)} placeholder="Create a strong password" icon={<Lock size={15} strokeWidth={2}/>} error={errors.password}/>
                   {form.password && <PasswordStrength password={form.password}/>}
                   <InputField label="Confirm password" type="password" value={form.confirmPassword} onChange={e=>update('confirmPassword',e.target.value)} placeholder="Repeat your password" icon={<Lock size={15} strokeWidth={2}/>} error={errors.confirmPassword}/>
