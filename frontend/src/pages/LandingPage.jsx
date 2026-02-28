@@ -305,7 +305,7 @@ function Hero({ navigate }) {
           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 28px rgba(255,255,255,.15)' }}>
           Take the Free Placement Test →
         </button>
-        <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+        <button onClick={() => navigate('/register')}
           style={{ background: 'transparent', color: T.inkMid, border: `1.5px solid ${T.borderMid}`, padding: 'clamp(14px,2.5vw,17px) clamp(22px,4vw,42px)', borderRadius: 100, fontFamily: "'DM Sans',sans-serif", fontSize: 'clamp(14px,1.5vw,16px)', fontWeight: 500, cursor: 'pointer', transition: 'all .25s', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,.15)' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.4)'; e.currentTarget.style.color = T.ink; e.currentTarget.style.transform = 'translateY(-2px)' }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = T.borderMid; e.currentTarget.style.color = T.inkMid; e.currentTarget.style.transform = 'translateY(0)' }}>
