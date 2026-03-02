@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+import dj_database_url
 from urllib.parse import urlparse
 
 try:
@@ -12,6 +13,9 @@ except ImportError:  # pragma: no cover - fallback for environments without the 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+SECRET_KEY    = config('SECRET_KEY')
+DEBUG         = config('DEBUG', default=False, cast=bool)
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '.onrender.com']
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
@@ -74,6 +78,12 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # ─── Database ─────────────────────────────────────────────────────────────────
 
+DATABASES = {
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL'),
+        conn_max_age=600,
+    )
+}
 database_url = config('DATABASE_URL', default='')
 if database_url and dj_database_url:
     DATABASES = {
@@ -126,9 +136,6 @@ USE_I18N      = True
 USE_TZ        = True
 
 # ─── Static & Media files ─────────────────────────────────────────────────────
-# Requires Pillow: pip install Pillow
-# Django serves media files in DEBUG mode via urls.py static() helper.
-# In production use nginx or S3 instead.
 
 STATIC_URL  = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -146,7 +153,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication', 
+        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -167,7 +174,7 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
-    'http://localhost:5174',   
+    'http://localhost:5174',
     'http://127.0.0.1:5174',
 ]
 
@@ -198,21 +205,18 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # ─── File upload limits ────────────────────────────────────────────────────────
-# Thumbnail max 5 MB, video files up to 500 MB
 
 DATA_UPLOAD_MAX_MEMORY_SIZE  = 10 * 1024 * 1024   # 10 MB in-memory limit
 FILE_UPLOAD_MAX_MEMORY_SIZE  = 10 * 1024 * 1024   # 10 MB before temp file
 
 # ─── M-Pesa Daraja Configuration ─────────────────────────────────────────────
 
-# Get these from https://developer.safaricom.co.ke/
-MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
-MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
-MPESA_SHORTCODE = config('MPESA_SHORTCODE', default='')
-MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
-MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='https://yourdomain.com/api/payments/callback/')
-MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT', default='sandbox')  # 'sandbox' or 'production'
+MPESA_CONSUMER_KEY        = config('MPESA_CONSUMER_KEY', default='')
+MPESA_CONSUMER_SECRET     = config('MPESA_CONSUMER_SECRET', default='')
+MPESA_SHORTCODE           = config('MPESA_SHORTCODE', default='')
+MPESA_PASSKEY             = config('MPESA_PASSKEY', default='')
+MPESA_CALLBACK_URL        = config('MPESA_CALLBACK_URL', default='https://yourdomain.com/api/payments/callback/')
+MPESA_ENVIRONMENT         = config('MPESA_ENVIRONMENT', default='sandbox')
 
-# B2C Settings (for refunds)
-MPESA_B2C_INITIATOR_NAME = config('MPESA_B2C_INITIATOR_NAME', default='')
+MPESA_B2C_INITIATOR_NAME     = config('MPESA_B2C_INITIATOR_NAME', default='')
 MPESA_B2C_INITIATOR_PASSWORD = config('MPESA_B2C_INITIATOR_PASSWORD', default='')
