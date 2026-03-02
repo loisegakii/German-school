@@ -13,13 +13,10 @@ except ImportError:  # pragma: no cover - fallback for environments without the 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY    = config('SECRET_KEY')
-DEBUG         = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '.onrender.com']
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-DEFAULT_ALLOWED_HOSTS = 'localhost,127.0.0.1,0.0.0.0'
+DEFAULT_ALLOWED_HOSTS = 'localhost,127.0.0.1,0.0.0.0,.onrender.com'
 ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default=DEFAULT_ALLOWED_HOSTS).split(',') if h.strip()]
 
 # ─── Applications ─────────────────────────────────────────────────────────────

@@ -356,10 +356,59 @@ Remember to add your production domain to the **Authorized JavaScript origins** 
 
 ```bash
 python manage.py collectstatic
-gunicorn backend.wsgi:application
+gunicorn core.wsgi:application
 ```
 
 Recommended: deploy on **Railway**, **Render**, or a VPS with **Nginx + Gunicorn**.
+
+---
+
+
+### Render deployment quick guide
+
+#### Backend service (Render Web Service)
+
+- Root Directory: `backend`
+- Runtime: Python `3.12.8` (add `backend/runtime.txt`)
+- Build Command:
+  ```bash
+  pip install -r requirements.txt && python manage.py collectstatic --noinput
+  ```
+- Start Command:
+  ```bash
+  python manage.py migrate && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
+  ```
+
+Set these environment variables in Render:
+
+```env
+SECRET_KEY=your-django-secret
+DEBUG=False
+ALLOWED_HOSTS=.onrender.com,your-backend-service.onrender.com
+DATABASE_URL=postgres://...   # from Render PostgreSQL
+CORS_ALLOWED_ORIGINS=https://your-frontend-domain.onrender.com
+```
+
+#### Frontend service (Render Static Site)
+
+- Root Directory: `frontend`
+- Build Command:
+  ```bash
+  npm install && npm run build
+  ```
+- Publish Directory: `dist`
+
+Frontend environment variables:
+
+```env
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+VITE_API_BASE_URL=https://your-backend-service.onrender.com/api
+```
+
+If login works locally but fails on Render, the most common cause is a hardcoded local API URL. This project now reads the frontend API base URL from `VITE_API_BASE_URL`.
+
+If you see a `pydantic_core` / `maturin` / Rust build error on Render (often with Python 3.14), pin Python to 3.12 via `backend/runtime.txt` and redeploy.
+
 
 ---
 
