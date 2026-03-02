@@ -1,14 +1,22 @@
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+from urllib.parse import urlparse
+
+try:
+    import dj_database_url
+except ImportError:  # pragma: no cover - fallback for environments without the package installed
+    dj_database_url = None
 
 # ─── Base ─────────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY    = config('SECRET_KEY')
-DEBUG         = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
+
+DEFAULT_ALLOWED_HOSTS = 'localhost,127.0.0.1,0.0.0.0'
+ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default=DEFAULT_ALLOWED_HOSTS).split(',') if h.strip()]
 
 # ─── Applications ─────────────────────────────────────────────────────────────
 
@@ -66,16 +74,36 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # ─── Database ─────────────────────────────────────────────────────────────────
 
-DATABASES = {
-    'default': {
-        'ENGINE':   'django.db.backends.postgresql',
-        'NAME':     config('DB_NAME'),
-        'USER':     config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST':     'localhost',
-        'PORT':     config('DB_PORT', default='5432'),
+database_url = config('DATABASE_URL', default='')
+if database_url and dj_database_url:
+    DATABASES = {
+        'default': dj_database_url.parse(database_url, conn_max_age=600, ssl_require=True)
     }
-}
+elif database_url:
+    parsed = urlparse(database_url)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': parsed.path.lstrip('/'),
+            'USER': parsed.username,
+            'PASSWORD': parsed.password,
+            'HOST': parsed.hostname,
+            'PORT': parsed.port or '5432',
+            'CONN_MAX_AGE': 600,
+            'OPTIONS': {'sslmode': 'require'},
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
 
 # ─── Custom user model ────────────────────────────────────────────────────────
 
@@ -143,7 +171,18 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5174',
 ]
 
+extra_cors_origins = config('CORS_ALLOWED_ORIGINS', default='')
+if extra_cors_origins:
+    CORS_ALLOWED_ORIGINS += [origin.strip() for origin in extra_cors_origins.split(',') if origin.strip()]
+
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS if origin.startswith('http://') or origin.startswith('https://')]
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # Allow multipart uploads (thumbnail, video) from the frontend
 CORS_ALLOW_HEADERS = [
