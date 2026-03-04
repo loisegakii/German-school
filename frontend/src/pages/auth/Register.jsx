@@ -42,6 +42,7 @@ import { authAPI } from '../../services/api'
 import { saveTokens } from '../../services/auth'
 import { useAuthStore } from '../../store/authStore'
 
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 // --- Currency config ----------------------------------------------------------
 const USD_TO_KES = 130
 const formatPrice = (usd, currency) => {
@@ -316,17 +317,17 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
 
     try {
       // No Authorization header — user hasn't registered yet, no token exists
-      const res = await fetch('/api/payments/mpesa/initiate/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phone_number: raw,
-          amount:       pricing.usdPrice,   // send USD — backend converts to KES
-          level:        level,
-        }),
-    })
+      const res = await fetch(`${API_BASE}/api/payments/mpesa/initiate/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              phone_number: raw,
+              amount:       pricing.usdPrice,
+              level:        level,
+            }),
+          })
 
       if (!res.ok) {
         const err = await res.json()
@@ -356,9 +357,9 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
       pollRef.current = setInterval(async () => {
         try {
           const statusRes = await fetch(
-            `/api/payments/mpesa/status/${checkout_request_id}/`
-            // No headers needed — AllowAny endpoint
+            `${API_BASE}/api/payments/mpesa/status/${checkout_request_id}/`
           )
+          // No headers needed — AllowAny endpoint
           const { status: txStatus } = await statusRes.json()
 
           if (txStatus === 'completed') {
