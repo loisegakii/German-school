@@ -220,17 +220,23 @@ class MpesaDaraja:
         return query_stk_status(checkout_request_id)
     
     def validate_callback(self, raw_data):
-        # Parse callback data
         stk_callback = raw_data.get('Body', {}).get('stkCallback', {})
+
+        # Extract items from callback metadata
+        items = {}
+        callback_metadata = stk_callback.get('CallbackMetadata', {})
+        for item in callback_metadata.get('Item', []):
+            items[item.get('Name')] = item.get('Value')
+
         return {
-            'result_code': stk_callback.get('ResultCode'),
-            'result_desc': stk_callback.get('ResultDesc'),
-            'checkout_request_id': stk_callback.get('CheckoutRequestID'),
-            'merchant_request_id': stk_callback.get('MerchantRequestID'),
-            'mpesa_receipt_number': None,
-            'phone_number': None,
-            'amount': None,
-            'transaction_date': None
+            'result_code':          stk_callback.get('ResultCode'),
+            'result_desc':          stk_callback.get('ResultDesc'),
+            'checkout_request_id':  stk_callback.get('CheckoutRequestID'),
+            'merchant_request_id':  stk_callback.get('MerchantRequestID'),
+            'mpesa_receipt_number': items.get('MpesaReceiptNumber'),
+            'phone_number':         str(items.get('PhoneNumber', '')),
+            'amount':               items.get('Amount'),
+            'transaction_date':     items.get('TransactionDate'),
         }
 
 

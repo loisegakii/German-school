@@ -2,25 +2,20 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config
 import dj_database_url
-from urllib.parse import urlparse
-
-try:
-    import dj_database_url
-except ImportError:  # pragma: no cover - fallback for environments without the package installed
-    dj_database_url = None
 
 # ─── Base ─────────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY    = config('SECRET_KEY')
-DEBUG         = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '.onrender.com']
 SECRET_KEY = config('SECRET_KEY')
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG      = config('DEBUG', default=False, cast=bool)
 
-DEFAULT_ALLOWED_HOSTS = 'localhost,127.0.0.1,0.0.0.0'
-ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default=DEFAULT_ALLOWED_HOSTS).split(',') if h.strip()]
+DEFAULT_ALLOWED_HOSTS = 'localhost,127.0.0.1,0.0.0.0,.onrender.com'
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in config('ALLOWED_HOSTS', default=DEFAULT_ALLOWED_HOSTS).split(',')
+    if h.strip()
+]
 
 # ─── Applications ─────────────────────────────────────────────────────────────
 
@@ -38,7 +33,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
 
-    # Our app
+    # Our apps
     'lms',
     'payments',
 ]
@@ -46,7 +41,7 @@ INSTALLED_APPS = [
 # ─── Middleware ────────────────────────────────────────────────────────────────
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',       # must be first
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -78,41 +73,29 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 # ─── Database ─────────────────────────────────────────────────────────────────
+# On Render: DATABASE_URL contains 'render.com' → use dj_database_url (SSL on)
+# Locally:   falls back to individual DB_* variables (no SSL)
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL'),
-        conn_max_age=600,
-    )
-}
 database_url = config('DATABASE_URL', default='')
-if database_url and dj_database_url:
+
+if database_url and 'render.com' in database_url:
+    # Production (Render) — SSL required
     DATABASES = {
-        'default': dj_database_url.parse(database_url, conn_max_age=600, ssl_require=True)
-    }
-elif database_url:
-    parsed = urlparse(database_url)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': parsed.path.lstrip('/'),
-            'USER': parsed.username,
-            'PASSWORD': parsed.password,
-            'HOST': parsed.hostname,
-            'PORT': parsed.port or '5432',
-            'CONN_MAX_AGE': 600,
-            'OPTIONS': {'sslmode': 'require'},
-        }
+        'default': dj_database_url.config(
+            default=database_url,
+            conn_max_age=600,
+        )
     }
 else:
+    # Local development — no SSL
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME'),
-            'USER': config('DB_USER'),
-            'PASSWORD': config('DB_PASSWORD'),
-            'HOST': config('DB_HOST', default='localhost'),
-            'PORT': config('DB_PORT', default='5432'),
+            'ENGINE':   'django.db.backends.postgresql',
+            'NAME':     config('DB_NAME', default='deutschpro'),
+            'USER':     config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default='1234567'),
+            'HOST':     'localhost',
+            'PORT':     config('DB_PORT', default='5432'),
         }
     }
 
@@ -140,6 +123,7 @@ USE_TZ        = True
 
 STATIC_URL  = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -159,10 +143,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
-
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ─── JWT ──────────────────────────────────────────────────────────────────────
 
@@ -185,18 +165,17 @@ CORS_ALLOWED_ORIGINS = [
 
 extra_cors_origins = config('CORS_ALLOWED_ORIGINS', default='')
 if extra_cors_origins:
-    CORS_ALLOWED_ORIGINS += [origin.strip() for origin in extra_cors_origins.split(',') if origin.strip()]
+    CORS_ALLOWED_ORIGINS += [
+        o.strip() for o in extra_cors_origins.split(',') if o.strip()
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS if origin.startswith('http://') or origin.startswith('https://')]
+CSRF_TRUSTED_ORIGINS = [
+    o for o in CORS_ALLOWED_ORIGINS
+    if o.startswith('http://') or o.startswith('https://')
+]
 
-if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-
-# Allow multipart uploads (thumbnail, video) from the frontend
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -209,10 +188,17 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# ─── File upload limits ────────────────────────────────────────────────────────
+# ─── Security (production only) ───────────────────────────────────────────────
 
-DATA_UPLOAD_MAX_MEMORY_SIZE  = 10 * 1024 * 1024   # 10 MB in-memory limit
-FILE_UPLOAD_MAX_MEMORY_SIZE  = 10 * 1024 * 1024   # 10 MB before temp file
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE   = True
+    CSRF_COOKIE_SECURE      = True
+
+# ─── File upload limits ───────────────────────────────────────────────────────
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10 MB
 
 # ─── M-Pesa Daraja Configuration ─────────────────────────────────────────────
 

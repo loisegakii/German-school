@@ -11,7 +11,6 @@ from rest_framework.views import APIView
 from lms.models import Course, Enrollment
 from .models import Payment, PaymentCallback
 from .serializers import (
-    PaymentInitiateSerializer,
     PaymentSerializer,
     PaymentStatusSerializer,
     PaymentListSerializer,
@@ -28,24 +27,64 @@ class InitiatePaymentView(APIView):
 
     Initiates an M-Pesa STK Push for course enrollment.
 
-    FIX: Changed permission to AllowAny — payment happens BEFORE the user
-    account is created, so no JWT token exists at this point in the
-    registration flow.
+    Accepts either:
+      - course_id (integer) — direct lookup by primary key
+      - level (string)      — e.g. "A2 — Elementary", looked up by title/level
+
+    Payment happens BEFORE the user account is created, so permission is
+    AllowAny and user field on Payment is null until account is linked later.
     """
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = PaymentInitiateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        phone_number = request.data.get('phone_number')
+        amount       = request.data.get('amount')
+        level        = request.data.get('level')
+        course_id    = request.data.get('course_id')
 
-        course_id    = serializer.validated_data['course_id']
-        phone_number = serializer.validated_data['phone_number']
-        amount       = serializer.validated_data['amount']  # USD
+        # ── Basic validation ──────────────────────────────────────────────────
+        if not phone_number:
+            return Response(
+                {'error': 'phone_number is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not amount:
+            return Response(
+                {'error': 'amount is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not course_id and not level:
+            return Response(
+                {'error': 'Either course_id or level is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        # ── Look up course ────────────────────────────────────────────────────
+        # ── Look up course by ID or level name ────────────────────────────────
+        course = None
         try:
-            course = Course.objects.get(pk=course_id)
+            if course_id:
+                course = Course.objects.get(pk=course_id)
+            elif level:
+                # level from frontend e.g. "A2 — Elementary"
+                # Try matching the part before the dash e.g. "A2"
+                level_prefix = level.split('—')[0].strip()
+
+                # Try title first, then level field
+                course = Course.objects.filter(
+                    title__icontains=level_prefix
+                ).first()
+
+                if not course:
+                    course = Course.objects.filter(
+                        level__icontains=level_prefix
+                    ).first()
+
+                if not course:
+                    return Response(
+                        {'error': f'No course found for level: {level}'},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+
         except Course.DoesNotExist:
             return Response(
                 {'error': 'Course not found.'},
@@ -62,8 +101,8 @@ class InitiatePaymentView(APIView):
         formatted_phone = MpesaDaraja.format_phone_number(phone_number)
 
         # ── Convert USD → KES for Safaricom ──────────────────────────────────
-        USD_TO_KES  = getattr(settings, 'USD_TO_KES_RATE', 130)
-        amount_kes  = round(float(amount) * USD_TO_KES, 2)
+        USD_TO_KES = getattr(settings, 'USD_TO_KES_RATE', 130)
+        amount_kes = round(float(amount) * USD_TO_KES, 2)
 
         # ── Create pending payment record ─────────────────────────────────────
         # Attach to request.user only when already authenticated (e.g. buying
@@ -72,8 +111,8 @@ class InitiatePaymentView(APIView):
         payment = Payment.objects.create(
             user=request.user if request.user.is_authenticated else None,
             course=course,
-            amount_usd=amount,       # original USD value from frontend
-            amount=amount_kes,       # KES value sent to Safaricom
+            amount_usd=amount,
+            amount=amount_kes,
             currency='KES',
             phone_number=formatted_phone,
             status='pending',
@@ -86,7 +125,7 @@ class InitiatePaymentView(APIView):
 
             response = mpesa.initiate_stk_push(
                 phone_number=formatted_phone,
-                amount=amount_kes,           # Safaricom requires KES
+                amount=amount_kes,
                 account_reference=f"PAY{payment.id}",
                 transaction_desc=f"Enrollment: {course.title}",
                 callback_url=getattr(settings, 'MPESA_CALLBACK_URL', None),
@@ -94,7 +133,7 @@ class InitiatePaymentView(APIView):
 
             checkout_request_id = response.get('CheckoutRequestID')
             payment.checkout_request_id = checkout_request_id
-            payment.status   = 'initiated'
+            payment.status = 'initiated'
             payment.metadata = {
                 'merchant_request_id': response.get('MerchantRequestID'),
                 'response_code':       response.get('ResponseCode'),
@@ -129,8 +168,8 @@ class MpesaStatusView(APIView):
     """
     GET /api/payments/mpesa/status/<checkout_request_id>/
 
-    Polled by the frontend every 3 s while waiting for the user to enter
-    their M-Pesa PIN.  Returns the current payment status so the UI can
+    Polled by the frontend every 3s while waiting for the user to enter
+    their M-Pesa PIN. Returns the current payment status so the UI can
     advance the moment Safaricom confirms the transaction.
 
     Possible status values:
@@ -214,7 +253,7 @@ class PaymentCallbackView(APIView):
                 # Auto-enroll if payment is already linked to a registered account.
                 # If user is still null (pre-registration flow), enrollment is
                 # triggered later via payment.link_user(user) once the account
-                # is created — see Payment.link_user() in models.py.
+                # is created.
                 if payment.user:
                     enrollment, created = Enrollment.objects.get_or_create(
                         student=payment.user,
