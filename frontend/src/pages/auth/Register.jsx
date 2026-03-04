@@ -42,7 +42,7 @@ import { authAPI } from '../../services/api'
 import { saveTokens } from '../../services/auth'
 import { useAuthStore } from '../../store/authStore'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://german-school-mlnl.onrender.com'
 // --- Currency config ----------------------------------------------------------
 const USD_TO_KES = 130
 const formatPrice = (usd, currency) => {
