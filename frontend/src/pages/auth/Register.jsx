@@ -322,11 +322,11 @@ function PaymentStep({ level, currency, onCurrencyChange, onSuccess, onBack, pre
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phone:  raw,
-          amount: getRawKes(pricing.usdPrice),
-          level:  level,
+          phone_number: raw,
+          amount:       pricing.usdPrice,   // send USD — backend converts to KES
+          level:        level,
         }),
-      })
+    })
 
       if (!res.ok) {
         const err = await res.json()
