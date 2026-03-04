@@ -78,8 +78,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 database_url = config('DATABASE_URL', default='')
 
-if database_url and 'render.com' in database_url:
-    # Production (Render) — SSL required
+if database_url:
     DATABASES = {
         'default': dj_database_url.config(
             default=database_url,
@@ -87,7 +86,6 @@ if database_url and 'render.com' in database_url:
         )
     }
 else:
-    # Local development — no SSL
     DATABASES = {
         'default': {
             'ENGINE':   'django.db.backends.postgresql',
