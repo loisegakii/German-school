@@ -823,83 +823,106 @@ export default function AdminPanel() {
 
   const userStatus = (u) => !u.is_active ? 'inactive' : 'active'
 
+  // Detect desktop vs mobile using JS (avoids Tailwind responsive class issues)
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024)
+  useEffect(() => {
+    const handler = () => setIsDesktop(window.innerWidth >= 1024)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
   const handleTabChange = (id) => {
     setActiveTab(id)
     setMobileMenuOpen(false)
   }
 
+  const sidebarVisible = isDesktop || mobileMenuOpen
+  const sidebarWidth   = isDesktop && collapsed ? 64 : 240
+
   return (
-    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
+    <div style={{ display: 'flex', height: '100vh', background: '#f8fafc', overflow: 'hidden', fontFamily: 'sans-serif' }}>
 
       {/* ── Mobile backdrop ── */}
-      {mobileMenuOpen && (
+      {mobileMenuOpen && !isDesktop && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 30 }}
         />
       )}
 
       {/* ── Sidebar ── */}
-      <aside className={`
-        fixed lg:relative inset-y-0 left-0 z-40
-        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
-        ${collapsed ? 'lg:w-16' : 'w-60'}
-        bg-[#0a1628] flex flex-col transition-all duration-300 shrink-0
-      `}>
-        <div className="flex items-center justify-between px-4 py-5 border-b border-white/10">
-          {!collapsed && (
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-red-500 rounded-lg flex items-center justify-center">
-                <Shield size={14} className="text-white" />
+      <aside style={{
+        position: isDesktop ? 'relative' : 'fixed',
+        top: 0, left: 0, bottom: 0,
+        zIndex: 40,
+        width: `${sidebarWidth}px`,
+        background: '#0a1628',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'transform 0.3s ease, width 0.3s ease',
+        transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          {!(isDesktop && collapsed) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 28, height: 28, background: '#ef4444', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Shield size={14} color="white" />
               </div>
-              <span className="text-white font-semibold text-sm">Admin Panel</span>
+              <span style={{ color: 'white', fontWeight: 600, fontSize: 14 }}>Admin Panel</span>
             </div>
           )}
-          <button
-            onClick={() => { setCollapsed(!collapsed); setMobileMenuOpen(false) }}
-            className="text-slate-400 hover:text-white transition-colors ml-auto hidden lg:block">
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </button>
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-slate-400 hover:text-white transition-colors ml-auto lg:hidden">
-            <X size={18} />
-          </button>
+          {isDesktop ? (
+            <button onClick={() => setCollapsed(!collapsed)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(148,163,184,1)', marginLeft: 'auto' }}>
+              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            </button>
+          ) : (
+            <button onClick={() => setMobileMenuOpen(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(148,163,184,1)', marginLeft: 'auto' }}>
+              <X size={18} />
+            </button>
+          )}
         </div>
 
-        {!collapsed && (
-          <div className="mx-4 mt-4 mb-2 bg-red-500/15 border border-red-500/25 rounded-lg px-3 py-2 flex items-center gap-2">
-            <Shield size={13} className="text-red-400" />
-            <span className="text-red-300 text-xs font-medium">Administrator</span>
+        {!(isDesktop && collapsed) && (
+          <div style={{ margin: '16px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Shield size={13} color="#f87171" />
+            <span style={{ color: '#fca5a5', fontSize: 12, fontWeight: 500 }}>Administrator</span>
           </div>
         )}
 
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+        <nav style={{ flex: 1, padding: '16px 8px', overflowY: 'auto' }}>
           {navItems.map(({ icon: Icon, label, id }) => (
             <button key={id} onClick={() => handleTabChange(id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium
-                ${activeTab === id ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/8'}`}>
-              <Icon size={18} className="shrink-0" />
-              {!collapsed && <span>{label}</span>}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                marginBottom: 4, fontSize: 14, fontWeight: 500, transition: 'all 0.2s',
+                background: activeTab === id ? '#dc2626' : 'transparent',
+                color: activeTab === id ? 'white' : 'rgba(148,163,184,1)',
+              }}>
+              <Icon size={18} style={{ flexShrink: 0 }} />
+              {!(isDesktop && collapsed) && <span>{label}</span>}
             </button>
           ))}
         </nav>
 
-        <div className="border-t border-white/10 p-3 space-y-1">
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/8 text-sm transition-all">
-            <Settings size={18} className="shrink-0" />
-            {!collapsed && <span>Settings</span>}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: 12 }}>
+          <button style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(148,163,184,1)', fontSize: 14, marginBottom: 4 }}>
+            <Settings size={18} style={{ flexShrink: 0 }} />
+            {!(isDesktop && collapsed) && <span>Settings</span>}
           </button>
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-red-400 text-sm transition-all">
-            <LogOut size={18} className="shrink-0" />
-            {!collapsed && <span>Sign Out</span>}
+          <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(148,163,184,1)', fontSize: 14 }}>
+            <LogOut size={18} style={{ flexShrink: 0 }} />
+            {!(isDesktop && collapsed) && <span>Sign Out</span>}
           </button>
-          {!collapsed && (
-            <div className="flex items-center gap-3 px-3 py-3 mt-2 border-t border-white/10">
-              <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">{initials}</div>
-              <div className="overflow-hidden">
-                <p className="text-white text-xs font-medium truncate">{fullName}</p>
-                <p className="text-slate-500 text-xs truncate">{email}</p>
+          {!(isDesktop && collapsed) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg,#ef4444,#b91c1c)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
+              <div style={{ overflow: 'hidden' }}>
+                <p style={{ color: 'white', fontSize: 12, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName}</p>
+                <p style={{ color: 'rgba(100,116,139,1)', fontSize: 11, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</p>
               </div>
             </div>
           )}
@@ -907,32 +930,33 @@ export default function AdminPanel() {
       </aside>
 
       {/* ── Main ── */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
         {/* Topbar */}
-        <header className="bg-white border-b border-slate-100 px-4 sm:px-6 py-4 flex items-center justify-between shrink-0 gap-3">
+        <header className="bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between shrink-0 gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            {/* Hamburger — mobile only */}
-            <button
-              className="lg:hidden text-slate-500 hover:text-slate-700 shrink-0"
-              onClick={() => setMobileMenuOpen(true)}>
-              <Menu size={22} />
-            </button>
+            {!isDesktop && (
+              <button
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', flexShrink: 0 }}
+                onClick={() => setMobileMenuOpen(true)}>
+                <Menu size={22} />
+              </button>
+            )}
             <div className="min-w-0">
               <h1 className="text-slate-800 font-semibold text-base sm:text-lg truncate">Platform Administration</h1>
-              <p className="text-slate-400 text-xs sm:text-sm hidden sm:block">DeutschPro · {today}</p>
+              <p style={{ color: "#94a3b8", fontSize: 12, display: isDesktop ? "block" : "none" }}>DeutschPro · {today}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={() => setAnnounceModal(true)}
-              className="hidden sm:flex items-center gap-2 border border-slate-200 text-slate-600 text-sm px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors font-medium">
+              style={{ display: isDesktop ? "flex" : "none", alignItems: "center", gap: 8, border: "1px solid #e2e8f0", color: "#475569", fontSize: 14, padding: "8px 16px", borderRadius: 8, background: "white", cursor: "pointer" }}>
               <Send size={14} /> Announce
             </button>
-            <button className="hidden sm:flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors">
+            <button style={{ display: isDesktop ? "flex" : "none", alignItems: "center", gap: 8, background: "#dc2626", color: "white", fontSize: 14, padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer" }}>
               <Download size={14} /> Export
             </button>
             {/* Mobile announce button */}
-            <button onClick={() => setAnnounceModal(true)} className="sm:hidden p-2 text-slate-500 hover:text-slate-700">
+            <button onClick={() => setAnnounceModal(true)} style={{ display: isDesktop ? "none" : "flex", background: "none", border: "none", cursor: "pointer", color: "#64748b", padding: 8 }}>
               <Send size={18} />
             </button>
             <div className="relative">
@@ -956,7 +980,7 @@ export default function AdminPanel() {
           )}
 
           {/* ── Platform Stats — 2 cols mobile, 4 cols desktop ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "repeat(4,1fr)" : "repeat(2,1fr)", gap: 12 }}>
             {platformStats.map(({ label, value, change, icon: Icon, color }) => {
               const bg = { blue: 'bg-blue-50', green: 'bg-green-50', amber: 'bg-amber-50', purple: 'bg-purple-50' }[color]
               const ic = { blue: 'text-blue-500', green: 'text-green-500', amber: 'text-amber-500', purple: 'text-purple-500' }[color]
@@ -969,7 +993,7 @@ export default function AdminPanel() {
                   </div>
                   <p className="text-xl sm:text-2xl font-bold text-slate-800">{value}</p>
                   <p className="text-slate-500 text-xs sm:text-sm mt-0.5">{label}</p>
-                  <p className="text-slate-400 text-xs mt-1 hidden sm:block">{change}</p>
+                  <p style={{ color: "#94a3b8", fontSize: 11, marginTop: 4, display: isDesktop ? "block" : "none" }}>{change}</p>
                 </div>
               )
             })}
@@ -994,7 +1018,7 @@ export default function AdminPanel() {
 
           {/* ── Tab: Users ── */}
           {activeTab === 'users' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+            <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "repeat(3,1fr)" : "1fr", gap: 16 }}>
               <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-slate-50 gap-3 flex-wrap">
                   <h2 className="font-semibold text-slate-800 text-sm">
@@ -1181,7 +1205,7 @@ export default function AdminPanel() {
 
           {/* ── Tab: Certificates ── */}
           {activeTab === 'certs' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+            <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "repeat(3,1fr)" : "1fr", gap: 16 }}>
               <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
                   <div className="flex items-center gap-2">
@@ -1241,7 +1265,7 @@ export default function AdminPanel() {
 
           {/* ── Tab: System ── */}
           {activeTab === 'system' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+            <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "repeat(3,1fr)" : "1fr", gap: 16 }}>
               <div className="lg:col-span-2 space-y-4 sm:space-y-5">
                 <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
                   <h2 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2">
