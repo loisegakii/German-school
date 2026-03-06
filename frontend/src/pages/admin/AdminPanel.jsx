@@ -7,7 +7,7 @@ import {
   Edit2, Trash2, Eye, Lock, Unlock, UserCheck, UserX, RefreshCw,
   Activity, Server, X, Check, DollarSign, GraduationCap, Flag,
   Clock, FileText, Mail, AlertTriangle, CheckCircle, Database,
-  Globe, Send, Cpu, HardDrive, UserPlus, Save
+  Globe, Send, Cpu, HardDrive, UserPlus, Save, Menu
 } from 'lucide-react'
 import API, { adminAPI } from '../../services/api'
 import { clearTokens } from '../../services/auth'
@@ -95,11 +95,11 @@ function ProgressBar({ value, color = 'blue' }) {
 function Toast({ message, type = 'success', onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t) }, [])
   return (
-    <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium
+    <div className={`fixed bottom-6 right-4 left-4 sm:left-auto sm:right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium
       ${type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
       {type === 'success' ? <CheckCircle size={15} /> : <AlertTriangle size={15} />}
       {message}
-      <button onClick={onClose} className="ml-2 opacity-70 hover:opacity-100"><X size={14} /></button>
+      <button onClick={onClose} className="ml-auto opacity-70 hover:opacity-100"><X size={14} /></button>
     </div>
   )
 }
@@ -162,9 +162,9 @@ function UserFormModal({ user, onClose, onSaved }) {
   const fieldLabel = { first_name: 'First Name', last_name: 'Last Name', email: 'Email', password: 'Password', role: 'Role', level: 'Level', exam_date: 'Exam Date' }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
-        <div className="bg-[#0a1628] px-6 py-5 flex items-center justify-between">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="bg-[#0a1628] px-6 py-5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-red-500/20 rounded-xl flex items-center justify-center">
               <UserPlus size={16} className="text-red-400" />
@@ -183,128 +183,130 @@ function UserFormModal({ user, onClose, onSaved }) {
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors"><X size={20} /></button>
         </div>
 
-        {step === 'form' && (
-          <div className="p-6 space-y-4">
-            {error && (
-              <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-                <AlertTriangle size={14} /> {error}
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>First Name</label>
-                <input className={inputCls} value={form.first_name} onChange={e => set('first_name', e.target.value)} placeholder="Maria" />
-              </div>
-              <div>
-                <label className={labelCls}>Last Name</label>
-                <input className={inputCls} value={form.last_name} onChange={e => set('last_name', e.target.value)} placeholder="Schmidt" />
-              </div>
-            </div>
-            <div>
-              <label className={labelCls}>Email Address</label>
-              <input className={inputCls} type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="user@example.com" />
-            </div>
-            {!isEdit && (
-              <div>
-                <label className={labelCls}>Password</label>
-                <input className={inputCls} type="password" value={form.password} onChange={e => set('password', e.target.value)} placeholder="Min 8 characters" />
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Role</label>
-                <select className={inputCls} value={form.role} onChange={e => set('role', e.target.value)}>
-                  <option value="student">Student</option>
-                  <option value="instructor">Instructor</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>CEFR Level</label>
-                <select className={inputCls} value={form.level} onChange={e => set('level', e.target.value)}>
-                  {['A1','A2','B1','B2','C1','C2'].map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className={labelCls}>Exam Date (optional)</label>
-              <input className={inputCls} type="date" value={form.exam_date} onChange={e => set('exam_date', e.target.value)} />
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button onClick={onClose} className="flex-1 border border-slate-200 text-slate-600 text-sm py-2.5 rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
-              <button onClick={handleReview} className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm py-2.5 rounded-xl transition-colors font-medium flex items-center justify-center gap-2">
-                <Eye size={14} /> Review & Confirm
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 'confirm' && (
-          <div className="p-6 space-y-4">
-            {error && (
-              <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-                <AlertTriangle size={14} /> {error}
-              </div>
-            )}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5">
-              {isEdit ? (
-                <>
-                  <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-3">Changes to be saved</p>
-                  {changes.length === 0 ? (
-                    <p className="text-slate-400 text-sm">No changes detected.</p>
-                  ) : changes.map(([k, v]) => (
-                    <div key={k} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-500">{fieldLabel[k] || k}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-400 line-through text-xs">{k === 'password' ? '••••••••' : String(user[k] ?? '—')}</span>
-                        <span className="text-slate-300">→</span>
-                        <span className="text-slate-800 font-medium">{k === 'password' ? '(new password)' : k === 'role' ? roleLabel[v] : String(v)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-3">New user details</p>
-                  {[
-                    ['Name',  `${form.first_name} ${form.last_name}`],
-                    ['Email', form.email],
-                    ['Role',  roleLabel[form.role]],
-                    ['Level', form.level],
-                    ...(form.exam_date ? [['Exam Date', form.exam_date]] : []),
-                  ].map(([label, value]) => (
-                    <div key={label} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-500">{label}</span>
-                      <span className="text-slate-800 font-medium capitalize">{value}</span>
-                    </div>
-                  ))}
-                </>
+        <div className="overflow-y-auto">
+          {step === 'form' && (
+            <div className="p-6 space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                  <AlertTriangle size={14} /> {error}
+                </div>
               )}
-            </div>
-            {isEdit && form.role !== user.role && (
-              <div className="flex items-start gap-2.5 px-3 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
-                <AlertTriangle size={15} className="shrink-0 mt-0.5 text-amber-500" />
-                <span>Changing role from <strong className="capitalize">{user.role}</strong> to <strong className="capitalize">{form.role}</strong> will affect what this user can access immediately.</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>First Name</label>
+                  <input className={inputCls} value={form.first_name} onChange={e => set('first_name', e.target.value)} placeholder="Maria" />
+                </div>
+                <div>
+                  <label className={labelCls}>Last Name</label>
+                  <input className={inputCls} value={form.last_name} onChange={e => set('last_name', e.target.value)} placeholder="Schmidt" />
+                </div>
               </div>
-            )}
-            {form.role === 'admin' && user?.role !== 'admin' && (
-              <div className="flex items-start gap-2.5 px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
-                <Shield size={15} className="shrink-0 mt-0.5 text-red-500" />
-                <span>Granting <strong>Admin</strong> access gives full platform control including user management and course approval.</span>
+              <div>
+                <label className={labelCls}>Email Address</label>
+                <input className={inputCls} type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="user@example.com" />
               </div>
-            )}
-            <div className="flex gap-2 pt-1">
-              <button onClick={() => setStep('form')} className="flex-1 border border-slate-200 text-slate-600 text-sm py-2.5 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
-                <ChevronLeft size={14} /> Back
-              </button>
-              <button onClick={handleConfirm} disabled={saving || (isEdit && changes.length === 0)}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm py-2.5 rounded-xl transition-colors font-medium flex items-center justify-center gap-2">
-                {saving ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />}
-                {saving ? 'Saving…' : isEdit ? 'Confirm & Save' : 'Confirm & Create'}
-              </button>
+              {!isEdit && (
+                <div>
+                  <label className={labelCls}>Password</label>
+                  <input className={inputCls} type="password" value={form.password} onChange={e => set('password', e.target.value)} placeholder="Min 8 characters" />
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Role</label>
+                  <select className={inputCls} value={form.role} onChange={e => set('role', e.target.value)}>
+                    <option value="student">Student</option>
+                    <option value="instructor">Instructor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>CEFR Level</label>
+                  <select className={inputCls} value={form.level} onChange={e => set('level', e.target.value)}>
+                    {['A1','A2','B1','B2','C1','C2'].map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Exam Date (optional)</label>
+                <input className={inputCls} type="date" value={form.exam_date} onChange={e => set('exam_date', e.target.value)} />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={onClose} className="flex-1 border border-slate-200 text-slate-600 text-sm py-2.5 rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
+                <button onClick={handleReview} className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm py-2.5 rounded-xl transition-colors font-medium flex items-center justify-center gap-2">
+                  <Eye size={14} /> Review & Confirm
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {step === 'confirm' && (
+            <div className="p-6 space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                  <AlertTriangle size={14} /> {error}
+                </div>
+              )}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5">
+                {isEdit ? (
+                  <>
+                    <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-3">Changes to be saved</p>
+                    {changes.length === 0 ? (
+                      <p className="text-slate-400 text-sm">No changes detected.</p>
+                    ) : changes.map(([k, v]) => (
+                      <div key={k} className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">{fieldLabel[k] || k}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400 line-through text-xs">{k === 'password' ? '••••••••' : String(user[k] ?? '—')}</span>
+                          <span className="text-slate-300">→</span>
+                          <span className="text-slate-800 font-medium">{k === 'password' ? '(new password)' : k === 'role' ? roleLabel[v] : String(v)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-3">New user details</p>
+                    {[
+                      ['Name',  `${form.first_name} ${form.last_name}`],
+                      ['Email', form.email],
+                      ['Role',  roleLabel[form.role]],
+                      ['Level', form.level],
+                      ...(form.exam_date ? [['Exam Date', form.exam_date]] : []),
+                    ].map(([label, value]) => (
+                      <div key={label} className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">{label}</span>
+                        <span className="text-slate-800 font-medium capitalize">{value}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+              {isEdit && form.role !== user.role && (
+                <div className="flex items-start gap-2.5 px-3 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
+                  <AlertTriangle size={15} className="shrink-0 mt-0.5 text-amber-500" />
+                  <span>Changing role from <strong className="capitalize">{user.role}</strong> to <strong className="capitalize">{form.role}</strong> will affect what this user can access immediately.</span>
+                </div>
+              )}
+              {form.role === 'admin' && user?.role !== 'admin' && (
+                <div className="flex items-start gap-2.5 px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+                  <Shield size={15} className="shrink-0 mt-0.5 text-red-500" />
+                  <span>Granting <strong>Admin</strong> access gives full platform control including user management and course approval.</span>
+                </div>
+              )}
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setStep('form')} className="flex-1 border border-slate-200 text-slate-600 text-sm py-2.5 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                  <ChevronLeft size={14} /> Back
+                </button>
+                <button onClick={handleConfirm} disabled={saving || (isEdit && changes.length === 0)}
+                  className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm py-2.5 rounded-xl transition-colors font-medium flex items-center justify-center gap-2">
+                  {saving ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />}
+                  {saving ? 'Saving…' : isEdit ? 'Confirm & Save' : 'Confirm & Create'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -320,8 +322,8 @@ function DeleteModal({ user, onClose, onDeleted }) {
     catch { setDeleting(false) }
   }
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-2xl p-6">
         <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Trash2 size={20} className="text-red-600" />
         </div>
@@ -343,8 +345,6 @@ function DeleteModal({ user, onClose, onDeleted }) {
 }
 
 // ─── Goethe Admin API ─────────────────────────────────────────────────────────
-// Admin hits /goethe/requests/ (same endpoint, backend scopes by role = admin)
-// Admin hits /goethe/admin/exams/ for exam CRUD
 
 const goetheAdminAPI = {
   requests:      ()         => API.get('/goethe/requests/'),
@@ -437,15 +437,14 @@ function GoetheAdminPanel({ showToast }) {
 
   return (
     <div>
-      {/* Sub-tab switcher */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
           {[
-            { id: 'requests', label: `Pending Requests (${requests.length})` },
-            { id: 'dates',    label: 'Manage Exam Dates'                      },
+            { id: 'requests', label: `Pending (${requests.length})` },
+            { id: 'dates',    label: 'Exam Dates'                   },
           ].map(t => (
             <button key={t.id} onClick={() => setSubTab(t.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap
                 ${subTab === t.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
               {t.label}
             </button>
@@ -460,7 +459,7 @@ function GoetheAdminPanel({ showToast }) {
                 notes:'', is_active:true })
               setExamForm('new')
             }}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-xl font-medium transition-colors">
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap">
             <Plus size={14} /> Add Exam Date
           </button>
         )}
@@ -472,22 +471,20 @@ function GoetheAdminPanel({ showToast }) {
         </div>
       ) : (
         <>
-          {/* ── Requests ── */}
           {subTab === 'requests' && (
             requests.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-16 text-center">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center">
                 <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <CheckCircle size={24} className="text-green-400" />
                 </div>
                 <p className="text-slate-600 font-medium mb-1">No pending requests</p>
-                <p className="text-slate-400 text-sm">Instructor-forwarded Goethe exam access requests will appear here once students submit and instructors forward them.</p>
+                <p className="text-slate-400 text-sm">Requests will appear here once students submit and instructors forward them.</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {requests.map(req => (
                   <div key={req.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                    {/* Card header */}
-                    <div className="bg-slate-50 px-5 py-3.5 flex items-center justify-between border-b border-slate-100">
+                    <div className="bg-slate-50 px-5 py-3.5 flex items-center justify-between border-b border-slate-100 flex-wrap gap-2">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center text-red-700 text-xs font-bold shrink-0">
                           {(req.student?.full_name || `${req.student?.first_name||''} ${req.student?.last_name||''}`.trim() || '?')
@@ -500,12 +497,10 @@ function GoetheAdminPanel({ showToast }) {
                           <p className="text-slate-400 text-xs">{req.student?.email}</p>
                         </div>
                       </div>
-                      <span className="text-slate-400 text-xs">Forwarded by instructor · {fmtDate(req.updated_at)}</span>
+                      <span className="text-slate-400 text-xs">Forwarded · {fmtDate(req.updated_at)}</span>
                     </div>
-
                     <div className="p-5">
-                      {/* Exam info grid */}
-                      <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                         <div className="bg-slate-50 rounded-xl p-3">
                           <p className="text-slate-400 text-xs font-semibold uppercase tracking-wide mb-1">Exam</p>
                           <p className="text-slate-800 font-bold text-sm">Goethe {req.exam?.level}</p>
@@ -522,8 +517,6 @@ function GoetheAdminPanel({ showToast }) {
                           {req.exam?.price_reduced && <p className="text-green-600 text-xs">{fmtKES(req.exam?.price_reduced)} reduced</p>}
                         </div>
                       </div>
-
-                      {/* Notes */}
                       {req.student_note && (
                         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-3">
                           <p className="text-slate-400 text-xs font-semibold mb-1">Student's note</p>
@@ -536,11 +529,9 @@ function GoetheAdminPanel({ showToast }) {
                           <p className="text-slate-700 text-sm">{req.instructor_note}</p>
                         </div>
                       )}
-
-                      {/* Admin note input */}
                       <div className="mb-4">
                         <label className="text-slate-600 text-xs font-semibold uppercase tracking-wide block mb-1.5">
-                          Note to student <span className="font-normal text-slate-400 normal-case">(optional — shown on approval/denial)</span>
+                          Note to student <span className="font-normal text-slate-400 normal-case">(optional)</span>
                         </label>
                         <textarea
                           value={noteMap[req.id] || ''}
@@ -550,23 +541,16 @@ function GoetheAdminPanel({ showToast }) {
                           className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
                         />
                       </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleAction(req, 'approve')}
-                          disabled={acting === req.id}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button onClick={() => handleAction(req, 'approve')} disabled={acting === req.id}
                           className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white text-sm px-5 py-2.5 rounded-xl font-medium transition-colors">
                           {acting === req.id ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />}
                           Approve
                         </button>
-                        <button
-                          onClick={() => handleAction(req, 'deny')}
-                          disabled={acting === req.id}
+                        <button onClick={() => handleAction(req, 'deny')} disabled={acting === req.id}
                           className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm px-5 py-2.5 rounded-xl font-medium transition-colors">
                           <X size={14} /> Deny
                         </button>
-                        <p className="text-slate-400 text-xs ml-2">Approving records the decision — add email notifications when ready.</p>
                       </div>
                     </div>
                   </div>
@@ -575,79 +559,79 @@ function GoetheAdminPanel({ showToast }) {
             )
           )}
 
-          {/* ── Exam Dates ── */}
           {subTab === 'dates' && (
             exams.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-16 text-center">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center">
                 <p className="text-slate-500 font-medium mb-1">No exam dates yet</p>
                 <p className="text-slate-400 text-sm">Click "Add Exam Date" to create the first one.</p>
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50 text-xs text-slate-500 font-medium">
-                      <th className="text-left px-5 py-3">Level</th>
-                      <th className="text-left px-3 py-3">Location</th>
-                      <th className="text-left px-3 py-3">Exam Date</th>
-                      <th className="text-left px-3 py-3">Registration</th>
-                      <th className="text-left px-3 py-3">Full Price</th>
-                      <th className="text-left px-3 py-3">Status</th>
-                      <th className="px-3 py-3" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {exams.map(exam => {
-                      const badge = bookingBadge(exam.booking_status)
-                      return (
-                        <tr key={exam.id} className="border-t border-slate-50 hover:bg-slate-50/60 transition-colors">
-                          <td className="px-5 py-3.5">
-                            <span className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white text-xs font-black inline-flex">
-                              {exam.level}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3.5 text-slate-700 text-sm">{exam.location}</td>
-                          <td className="px-3 py-3.5 text-slate-700 text-sm">{fmtDate(exam.exam_date_start)}</td>
-                          <td className="px-3 py-3.5 text-slate-500 text-xs">{fmtDate(exam.reg_open)} – {fmtDate(exam.reg_close)}</td>
-                          <td className="px-3 py-3.5 text-slate-800 text-sm font-semibold">{fmtKES(exam.price_full)}</td>
-                          <td className="px-3 py-3.5">
-                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${badge.cls}`}>{badge.label}</span>
-                          </td>
-                          <td className="px-3 py-3.5">
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => { setExamData({ ...exam }); setExamForm(exam) }}
-                                className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
-                                <Edit2 size={13} />
-                              </button>
-                              <button onClick={() => handleDeleteExam(exam)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[600px]">
+                    <thead>
+                      <tr className="bg-slate-50 text-xs text-slate-500 font-medium">
+                        <th className="text-left px-5 py-3">Level</th>
+                        <th className="text-left px-3 py-3">Location</th>
+                        <th className="text-left px-3 py-3">Exam Date</th>
+                        <th className="text-left px-3 py-3">Registration</th>
+                        <th className="text-left px-3 py-3">Full Price</th>
+                        <th className="text-left px-3 py-3">Status</th>
+                        <th className="px-3 py-3" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {exams.map(exam => {
+                        const badge = bookingBadge(exam.booking_status)
+                        return (
+                          <tr key={exam.id} className="border-t border-slate-50 hover:bg-slate-50/60 transition-colors">
+                            <td className="px-5 py-3.5">
+                              <span className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white text-xs font-black inline-flex">
+                                {exam.level}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3.5 text-slate-700 text-sm">{exam.location}</td>
+                            <td className="px-3 py-3.5 text-slate-700 text-sm">{fmtDate(exam.exam_date_start)}</td>
+                            <td className="px-3 py-3.5 text-slate-500 text-xs">{fmtDate(exam.reg_open)} – {fmtDate(exam.reg_close)}</td>
+                            <td className="px-3 py-3.5 text-slate-800 text-sm font-semibold">{fmtKES(exam.price_full)}</td>
+                            <td className="px-3 py-3.5">
+                              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${badge.cls}`}>{badge.label}</span>
+                            </td>
+                            <td className="px-3 py-3.5">
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => { setExamData({ ...exam }); setExamForm(exam) }}
+                                  className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
+                                  <Edit2 size={13} />
+                                </button>
+                                <button onClick={() => handleDeleteExam(exam)}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )
           )}
         </>
       )}
 
-      {/* ── Exam Form Modal ── */}
       {examForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
-            <div className="bg-[#0a1628] px-6 py-5 flex items-center justify-between">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-[#0a1628] px-6 py-5 flex items-center justify-between shrink-0">
               <div>
                 <p className="text-red-300 text-xs font-semibold uppercase tracking-wider mb-1">Admin · Goethe Dates</p>
                 <h3 className="text-white font-semibold">{examForm === 'new' ? 'Add Exam Date' : 'Edit Exam Date'}</h3>
               </div>
               <button onClick={() => setExamForm(null)} className="text-slate-400 hover:text-white"><X size={20} /></button>
             </div>
-            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+            <div className="p-6 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={lbl}>CEFR Level</label>
@@ -705,8 +689,7 @@ function GoetheAdminPanel({ showToast }) {
                 <textarea className={inp} rows={2} value={examData.notes} onChange={e => setExamData(d => ({ ...d, notes: e.target.value }))} placeholder="Additional notes…" style={{ resize: 'none' }} />
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setExamData(d => ({ ...d, is_active: !d.is_active }))}
+                <button onClick={() => setExamData(d => ({ ...d, is_active: !d.is_active }))}
                   className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${examData.is_active ? 'bg-green-500' : 'bg-slate-200'}`}>
                   <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${examData.is_active ? 'left-5' : 'left-0.5'}`} />
                 </button>
@@ -734,6 +717,7 @@ export default function AdminPanel() {
   const logout   = useAuthStore(s => s.logout)
 
   const [collapsed,       setCollapsed]       = useState(false)
+  const [mobileMenuOpen,  setMobileMenuOpen]  = useState(false)
   const [activeTab,       setActiveTab]       = useState('users')
   const [toast,           setToast]           = useState(null)
 
@@ -774,10 +758,10 @@ export default function AdminPanel() {
   }, [])
 
   const platformStats = [
-    { label: 'Total Users',        value: stats ? stats.total_users.toLocaleString()        : '…', change: `${stats?.total_students||0} students`,         up: true,  icon: Users,        color: 'blue'   },
-    { label: 'Active Courses',      value: stats ? String(stats.published_courses)            : '…', change: `${stats?.pending_courses||0} pending review`,  up: null,  icon: BookOpen,     color: 'amber'  },
-    { label: 'Total Enrollments',   value: stats ? stats.total_enrollments.toLocaleString()  : '…', change: 'active enrolments',                            up: true,  icon: GraduationCap,color: 'green'  },
-    { label: 'Certificates Issued', value: stats ? stats.total_certificates.toLocaleString() : '…', change: `${stats?.pending_certs||0} pending approval`,  up: true,  icon: Award,        color: 'purple' },
+    { label: 'Total Users',        value: stats ? stats.total_users.toLocaleString()        : '…', change: `${stats?.total_students||0} students`,         icon: Users,        color: 'blue'   },
+    { label: 'Active Courses',      value: stats ? String(stats.published_courses)            : '…', change: `${stats?.pending_courses||0} pending review`,  icon: BookOpen,     color: 'amber'  },
+    { label: 'Total Enrollments',   value: stats ? stats.total_enrollments.toLocaleString()  : '…', change: 'active enrolments',                            icon: GraduationCap,color: 'green'  },
+    { label: 'Certificates Issued', value: stats ? stats.total_certificates.toLocaleString() : '…', change: `${stats?.pending_certs||0} pending approval`,  icon: Award,        color: 'purple' },
   ]
 
   const handleSuspend = async (u) => {
@@ -839,11 +823,29 @@ export default function AdminPanel() {
 
   const userStatus = (u) => !u.is_active ? 'inactive' : 'active'
 
+  const handleTabChange = (id) => {
+    setActiveTab(id)
+    setMobileMenuOpen(false)
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
 
+      {/* ── Mobile backdrop ── */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside className={`${collapsed ? 'w-16' : 'w-60'} bg-[#0a1628] flex flex-col transition-all duration-300 shrink-0`}>
+      <aside className={`
+        fixed lg:relative inset-y-0 left-0 z-40
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
+        ${collapsed ? 'lg:w-16' : 'w-60'}
+        bg-[#0a1628] flex flex-col transition-all duration-300 shrink-0
+      `}>
         <div className="flex items-center justify-between px-4 py-5 border-b border-white/10">
           {!collapsed && (
             <div className="flex items-center gap-2">
@@ -853,8 +855,15 @@ export default function AdminPanel() {
               <span className="text-white font-semibold text-sm">Admin Panel</span>
             </div>
           )}
-          <button onClick={() => setCollapsed(!collapsed)} className="text-slate-400 hover:text-white transition-colors ml-auto">
+          <button
+            onClick={() => { setCollapsed(!collapsed); setMobileMenuOpen(false) }}
+            className="text-slate-400 hover:text-white transition-colors ml-auto hidden lg:block">
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-slate-400 hover:text-white transition-colors ml-auto lg:hidden">
+            <X size={18} />
           </button>
         </div>
 
@@ -865,9 +874,9 @@ export default function AdminPanel() {
           </div>
         )}
 
-        <nav className="flex-1 px-2 py-4 space-y-1">
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {navItems.map(({ icon: Icon, label, id }) => (
-            <button key={id} onClick={() => setActiveTab(id)}
+            <button key={id} onClick={() => handleTabChange(id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium
                 ${activeTab === id ? 'bg-red-600 text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/8'}`}>
               <Icon size={18} className="shrink-0" />
@@ -898,33 +907,47 @@ export default function AdminPanel() {
       </aside>
 
       {/* ── Main ── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
 
         {/* Topbar */}
-        <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-slate-800 font-semibold text-lg">Platform Administration</h1>
-            <p className="text-slate-400 text-sm">DeutschPro · {today}</p>
+        <header className="bg-white border-b border-slate-100 px-4 sm:px-6 py-4 flex items-center justify-between shrink-0 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Hamburger — mobile only */}
+            <button
+              className="lg:hidden text-slate-500 hover:text-slate-700 shrink-0"
+              onClick={() => setMobileMenuOpen(true)}>
+              <Menu size={22} />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-slate-800 font-semibold text-base sm:text-lg truncate">Platform Administration</h1>
+              <p className="text-slate-400 text-xs sm:text-sm hidden sm:block">DeutschPro · {today}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <button onClick={() => setAnnounceModal(true)}
-              className="flex items-center gap-2 border border-slate-200 text-slate-600 text-sm px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors font-medium">
+              className="hidden sm:flex items-center gap-2 border border-slate-200 text-slate-600 text-sm px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors font-medium">
               <Send size={14} /> Announce
             </button>
-            <button className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors">
-              <Download size={14} /> Export Report
+            <button className="hidden sm:flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors">
+              <Download size={14} /> Export
+            </button>
+            {/* Mobile announce button */}
+            <button onClick={() => setAnnounceModal(true)} className="sm:hidden p-2 text-slate-500 hover:text-slate-700">
+              <Send size={18} />
             </button>
             <div className="relative">
               <Bell size={20} className="text-slate-500 cursor-pointer hover:text-slate-700" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
-                {stats?.pending_certs || ''}
-              </span>
+              {stats?.pending_certs > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                  {stats.pending_certs}
+                </span>
+              )}
             </div>
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
 
           {error && (
             <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
@@ -932,47 +955,48 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* ── Platform Stats ── */}
-          <div className="grid grid-cols-4 gap-4">
-            {platformStats.map(({ label, value, change, up, icon: Icon, color }) => {
+          {/* ── Platform Stats — 2 cols mobile, 4 cols desktop ── */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {platformStats.map(({ label, value, change, icon: Icon, color }) => {
               const bg = { blue: 'bg-blue-50', green: 'bg-green-50', amber: 'bg-amber-50', purple: 'bg-purple-50' }[color]
               const ic = { blue: 'text-blue-500', green: 'text-green-500', amber: 'text-amber-500', purple: 'text-purple-500' }[color]
               return (
-                <div key={label} className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div key={label} className="bg-white rounded-xl p-4 sm:p-5 border border-slate-100 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <div className={`w-10 h-10 ${bg} rounded-lg flex items-center justify-center`}><Icon size={18} className={ic} /></div>
-                    {up !== null && <span className={`text-xs font-medium ${up ? 'text-green-600' : 'text-slate-400'}`}>{up ? <TrendingUp size={12} /> : ''}</span>}
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 ${bg} rounded-lg flex items-center justify-center`}>
+                      <Icon size={16} className={ic} />
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-slate-800">{value}</p>
-                  <p className="text-slate-500 text-sm mt-0.5">{label}</p>
-                  <p className="text-slate-400 text-xs mt-1">{change}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800">{value}</p>
+                  <p className="text-slate-500 text-xs sm:text-sm mt-0.5">{label}</p>
+                  <p className="text-slate-400 text-xs mt-1 hidden sm:block">{change}</p>
                 </div>
               )
             })}
           </div>
 
-          {/* ── Tab nav ── */}
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+          {/* ── Tab nav — horizontally scrollable on mobile ── */}
+          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto">
             {[
-              { id: 'users',   label: 'Users',            icon: Users         },
-              { id: 'courses', label: 'Courses',           icon: BookOpen      },
-              { id: 'certs',   label: 'Certificates',      icon: Award         },
-              { id: 'goethe',  label: 'Goethe Requests',   icon: GraduationCap },
-              { id: 'system',  label: 'System',            icon: Server        },
+              { id: 'users',   label: 'Users',      icon: Users         },
+              { id: 'courses', label: 'Courses',     icon: BookOpen      },
+              { id: 'certs',   label: 'Certs',       icon: Award         },
+              { id: 'goethe',  label: 'Goethe',      icon: GraduationCap },
+              { id: 'system',  label: 'System',      icon: Server        },
             ].map(({ id, label, icon: Icon }) => (
               <button key={id} onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap
                   ${activeTab === id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                <Icon size={15} /> {label}
+                <Icon size={14} /> {label}
               </button>
             ))}
           </div>
 
           {/* ── Tab: Users ── */}
           {activeTab === 'users' && (
-            <div className="grid grid-cols-3 gap-5">
-              <div className="col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+              <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-slate-50 gap-3 flex-wrap">
                   <h2 className="font-semibold text-slate-800 text-sm">
                     All Users
                     <span className="ml-2 text-slate-400 font-normal text-xs">({users.length})</span>
@@ -980,12 +1004,12 @@ export default function AdminPanel() {
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input placeholder="Search users..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                        className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-red-400 w-44" />
+                      <input placeholder="Search…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                        className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-red-400 w-32 sm:w-44" />
                     </div>
                     <button onClick={() => setUserFormModal('create')}
-                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg transition-colors font-medium">
-                      <Plus size={12} /> Add User
+                      className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg transition-colors font-medium whitespace-nowrap">
+                      <Plus size={12} /> Add
                     </button>
                   </div>
                 </div>
@@ -995,60 +1019,62 @@ export default function AdminPanel() {
                 ) : filteredUsers.length === 0 ? (
                   <div className="px-5 py-12 text-center text-slate-400 text-sm">No users found.</div>
                 ) : (
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-slate-50 text-xs text-slate-500 font-medium">
-                        <th className="text-left px-5 py-3">User</th>
-                        <th className="text-left px-3 py-3">Role</th>
-                        <th className="text-left px-3 py-3">Level</th>
-                        <th className="text-left px-3 py-3">Status</th>
-                        <th className="px-3 py-3"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredUsers.map((u) => {
-                        const st  = statusConfig[userStatus(u)] || statusConfig.active
-                        const lvl = u.level || ''
-                        return (
-                          <tr key={u.id} className="border-t border-slate-50 hover:bg-slate-50/60 transition-colors">
-                            <td className="px-5 py-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center text-slate-600 text-xs font-bold shrink-0">
-                                  {`${(u.first_name||'')[0]||''}${(u.last_name||'')[0]||''}`.toUpperCase() || '?'}
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[500px]">
+                      <thead>
+                        <tr className="bg-slate-50 text-xs text-slate-500 font-medium">
+                          <th className="text-left px-4 sm:px-5 py-3">User</th>
+                          <th className="text-left px-3 py-3">Role</th>
+                          <th className="text-left px-3 py-3 hidden sm:table-cell">Level</th>
+                          <th className="text-left px-3 py-3">Status</th>
+                          <th className="px-3 py-3"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredUsers.map((u) => {
+                          const st  = statusConfig[userStatus(u)] || statusConfig.active
+                          const lvl = u.level || ''
+                          return (
+                            <tr key={u.id} className="border-t border-slate-50 hover:bg-slate-50/60 transition-colors">
+                              <td className="px-4 sm:px-5 py-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center text-slate-600 text-xs font-bold shrink-0">
+                                    {`${(u.first_name||'')[0]||''}${(u.last_name||'')[0]||''}`.toUpperCase() || '?'}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-slate-800 text-sm font-medium truncate">{u.first_name} {u.last_name}</p>
+                                    <p className="text-slate-400 text-xs truncate hidden sm:block">{u.email}</p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="text-slate-800 text-sm font-medium">{u.first_name} {u.last_name}</p>
-                                  <p className="text-slate-400 text-xs">{u.email}</p>
+                              </td>
+                              <td className="px-3 py-3">
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${roleColors[u.role] || 'bg-slate-100 text-slate-600'}`}>{u.role}</span>
+                              </td>
+                              <td className="px-3 py-3 hidden sm:table-cell">
+                                {lvl ? <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${levelColors[lvl]}`}>{lvl}</span> : <span className="text-slate-300 text-xs">—</span>}
+                              </td>
+                              <td className="px-3 py-3">
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1 w-fit ${st.bg} ${st.text}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${st.dot}`} />
+                                  <span className="hidden sm:inline">{st.label}</span>
+                                </span>
+                              </td>
+                              <td className="px-3 py-3">
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => setUserDetailModal(u)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Eye size={13} /></button>
+                                  <button onClick={() => setUserFormModal(u)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors hidden sm:block"><Edit2 size={13} /></button>
+                                  <button onClick={() => handleSuspend(u)} className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors hidden sm:block">
+                                    {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
+                                  </button>
+                                  <button onClick={() => setDeleteModal(u)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={13} /></button>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-3 py-3">
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${roleColors[u.role] || 'bg-slate-100 text-slate-600'}`}>{u.role}</span>
-                            </td>
-                            <td className="px-3 py-3">
-                              {lvl ? <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${levelColors[lvl]}`}>{lvl}</span> : <span className="text-slate-300 text-xs">—</span>}
-                            </td>
-                            <td className="px-3 py-3">
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1.5 w-fit ${st.bg} ${st.text}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                                {st.label}
-                              </span>
-                            </td>
-                            <td className="px-3 py-3">
-                              <div className="flex items-center gap-1">
-                                <button onClick={() => setUserDetailModal(u)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Eye size={13} /></button>
-                                <button onClick={() => setUserFormModal(u)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><Edit2 size={13} /></button>
-                                <button onClick={() => handleSuspend(u)} className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors">
-                                  {u.is_active ? <Lock size={13} /> : <Unlock size={13} />}
-                                </button>
-                                <button onClick={() => setDeleteModal(u)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={13} /></button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
 
@@ -1103,61 +1129,63 @@ export default function AdminPanel() {
               ) : courses.length === 0 ? (
                 <div className="px-5 py-12 text-center text-slate-400 text-sm">No courses found.</div>
               ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50 text-xs text-slate-500 font-medium">
-                      <th className="text-left px-5 py-3">Course</th>
-                      <th className="text-left px-3 py-3">Instructor</th>
-                      <th className="text-left px-3 py-3">Level</th>
-                      <th className="text-left px-3 py-3">Students</th>
-                      <th className="text-left px-3 py-3">Status</th>
-                      <th className="px-3 py-3"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {courses.map((c) => {
-                      const cs = courseStatusConfig[c.status] || courseStatusConfig.draft
-                      return (
-                        <tr key={c.id} className="border-t border-slate-50 hover:bg-slate-50/60 transition-colors">
-                          <td className="px-5 py-4"><p className="text-slate-800 text-sm font-medium">{c.title}</p></td>
-                          <td className="px-3 py-4">
-                            <span className="text-slate-600 text-sm">
-                              {c.instructor ? `${c.instructor.first_name||''} ${c.instructor.last_name||''}`.trim() : '—'}
-                            </span>
-                          </td>
-                          <td className="px-3 py-4">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${levelColors[c.level] || levelColors['']}`}>{c.level || '—'}</span>
-                          </td>
-                          <td className="px-3 py-4"><span className="text-slate-700 text-sm">{c.student_count ?? 0}</span></td>
-                          <td className="px-3 py-4"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${cs.color}`}>{cs.label}</span></td>
-                          <td className="px-3 py-4">
-                            <div className="flex items-center gap-1">
-                              {c.status === 'review' && (
-                                <>
-                                  <button onClick={() => handleCourseReview(c.id, 'approve')} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"><Check size={13} /></button>
-                                  <button onClick={() => handleCourseReview(c.id, 'reject')}  className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><X size={13} /></button>
-                                </>
-                              )}
-                              <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Eye size={13} /></button>
-                              <button className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><Edit2 size={13} /></button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[500px]">
+                    <thead>
+                      <tr className="bg-slate-50 text-xs text-slate-500 font-medium">
+                        <th className="text-left px-5 py-3">Course</th>
+                        <th className="text-left px-3 py-3 hidden sm:table-cell">Instructor</th>
+                        <th className="text-left px-3 py-3">Level</th>
+                        <th className="text-left px-3 py-3 hidden sm:table-cell">Students</th>
+                        <th className="text-left px-3 py-3">Status</th>
+                        <th className="px-3 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {courses.map((c) => {
+                        const cs = courseStatusConfig[c.status] || courseStatusConfig.draft
+                        return (
+                          <tr key={c.id} className="border-t border-slate-50 hover:bg-slate-50/60 transition-colors">
+                            <td className="px-5 py-4"><p className="text-slate-800 text-sm font-medium">{c.title}</p></td>
+                            <td className="px-3 py-4 hidden sm:table-cell">
+                              <span className="text-slate-600 text-sm">
+                                {c.instructor ? `${c.instructor.first_name||''} ${c.instructor.last_name||''}`.trim() : '—'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-4">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${levelColors[c.level] || levelColors['']}`}>{c.level || '—'}</span>
+                            </td>
+                            <td className="px-3 py-4 hidden sm:table-cell"><span className="text-slate-700 text-sm">{c.student_count ?? 0}</span></td>
+                            <td className="px-3 py-4"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${cs.color}`}>{cs.label}</span></td>
+                            <td className="px-3 py-4">
+                              <div className="flex items-center gap-1">
+                                {c.status === 'review' && (
+                                  <>
+                                    <button onClick={() => handleCourseReview(c.id, 'approve')} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"><Check size={13} /></button>
+                                    <button onClick={() => handleCourseReview(c.id, 'reject')}  className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><X size={13} /></button>
+                                  </>
+                                )}
+                                <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Eye size={13} /></button>
+                                <button className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors hidden sm:block"><Edit2 size={13} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
 
           {/* ── Tab: Certificates ── */}
           {activeTab === 'certs' && (
-            <div className="grid grid-cols-3 gap-5">
-              <div className="col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+              <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
                   <div className="flex items-center gap-2">
-                    <h2 className="font-semibold text-slate-800 text-sm">Pending Certificate Approval</h2>
+                    <h2 className="font-semibold text-slate-800 text-sm">Pending Certificates</h2>
                     <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full">{pendingCerts.length}</span>
                   </div>
                 </div>
@@ -1168,9 +1196,9 @@ export default function AdminPanel() {
                 ) : (
                   <div className="divide-y divide-slate-50">
                     {pendingCerts.map((cert) => (
-                      <div key={cert.id} className="px-5 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center text-purple-700 text-xs font-bold shrink-0">
+                      <div key={cert.id} className="px-4 sm:px-5 py-4 flex items-center justify-between gap-3 hover:bg-slate-50/50 transition-colors flex-wrap">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center text-purple-700 text-xs font-bold shrink-0">
                             {`${(cert.student?.first_name||'')[0]||''}${(cert.student?.last_name||'')[0]||''}`.toUpperCase() || '?'}
                           </div>
                           <div>
@@ -1182,60 +1210,53 @@ export default function AdminPanel() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button className="flex items-center gap-1.5 border border-slate-200 text-slate-600 text-xs px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors">
-                            <Eye size={12} /> Preview
-                          </button>
-                          <button onClick={() => setCertModal(cert)}
-                            className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-2 rounded-lg transition-colors font-medium">
-                            <Award size={12} /> Issue Certificate
-                          </button>
-                        </div>
+                        <button onClick={() => setCertModal(cert)}
+                          className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-2 rounded-lg transition-colors font-medium">
+                          <Award size={12} /> Issue
+                        </button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-              <div className="space-y-4">
-                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
-                  <h2 className="font-semibold text-slate-800 text-sm mb-4">Certificate Stats</h2>
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Total Issued',   value: stats?.total_certificates ?? '—', color: 'text-slate-800' },
-                      { label: 'Pending Review', value: stats?.pending_certs       ?? '—', color: 'text-amber-600' },
-                    ].map(s => (
-                      <div key={s.label} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
-                        <span className="text-slate-500 text-sm">{s.label}</span>
-                        <span className={`font-bold text-sm ${s.color}`}>{s.value}</span>
-                      </div>
-                    ))}
-                  </div>
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+                <h2 className="font-semibold text-slate-800 text-sm mb-4">Certificate Stats</h2>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Total Issued',   value: stats?.total_certificates ?? '—', color: 'text-slate-800' },
+                    { label: 'Pending Review', value: stats?.pending_certs       ?? '—', color: 'text-amber-600' },
+                  ].map(s => (
+                    <div key={s.label} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+                      <span className="text-slate-500 text-sm">{s.label}</span>
+                      <span className={`font-bold text-sm ${s.color}`}>{s.value}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           )}
 
-          {/* ── Tab: Goethe Requests ── */}
+          {/* ── Tab: Goethe ── */}
           {activeTab === 'goethe' && <GoetheAdminPanel showToast={showToast} />}
 
           {/* ── Tab: System ── */}
           {activeTab === 'system' && (
-            <div className="grid grid-cols-3 gap-5">
-              <div className="col-span-2 space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-5">
                 <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
                   <h2 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2">
                     <Activity size={15} className="text-green-500" /> System Health
                   </h2>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     {MOCK_SYSTEM_HEALTH.map(({ label, value, status, icon: Icon }) => (
-                      <div key={label} className={`rounded-xl p-4 border ${status === 'good' ? 'border-green-100 bg-green-50/50' : 'border-amber-100 bg-amber-50/50'}`}>
+                      <div key={label} className={`rounded-xl p-3 sm:p-4 border ${status === 'good' ? 'border-green-100 bg-green-50/50' : 'border-amber-100 bg-amber-50/50'}`}>
                         <div className="flex items-center justify-between mb-2">
                           <Icon size={16} className={status === 'good' ? 'text-green-600' : 'text-amber-600'} />
                           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status === 'good' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                             {status === 'good' ? 'Healthy' : 'Warning'}
                           </span>
                         </div>
-                        <p className="text-slate-800 font-bold text-lg">{value}</p>
+                        <p className="text-slate-800 font-bold text-base sm:text-lg">{value}</p>
                         <p className="text-slate-500 text-xs mt-0.5">{label}</p>
                       </div>
                     ))}
@@ -1245,14 +1266,14 @@ export default function AdminPanel() {
                   <h2 className="font-semibold text-slate-800 text-sm mb-4">Platform Settings</h2>
                   <div className="space-y-3">
                     {toggles.map((toggle, i) => (
-                      <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
-                        <div>
+                      <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0 gap-4">
+                        <div className="min-w-0">
                           <p className="text-slate-800 text-sm font-medium">{toggle.label}</p>
-                          <p className="text-slate-400 text-xs mt-0.5">{toggle.desc}</p>
+                          <p className="text-slate-400 text-xs mt-0.5 hidden sm:block">{toggle.desc}</p>
                         </div>
                         <button
                           onClick={() => setToggles(prev => prev.map((t, j) => j === i ? { ...t, on: !t.on } : t))}
-                          className={`w-11 h-6 rounded-full transition-colors relative ${toggle.on ? 'bg-green-500' : 'bg-slate-200'}`}>
+                          className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${toggle.on ? 'bg-green-500' : 'bg-slate-200'}`}>
                           <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all ${toggle.on ? 'left-5' : 'left-0.5'}`} />
                         </button>
                       </div>
@@ -1297,8 +1318,8 @@ export default function AdminPanel() {
       )}
 
       {userDetailModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl overflow-hidden">
             <div className="bg-[#0a1628] px-6 py-5 flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -1345,8 +1366,8 @@ export default function AdminPanel() {
       )}
 
       {certModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-br from-purple-700 to-purple-900 px-6 py-6 text-center">
               <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Award size={28} className="text-white" />
@@ -1356,18 +1377,16 @@ export default function AdminPanel() {
             </div>
             <div className="p-6">
               <div className="bg-slate-50 rounded-xl p-4 mb-5 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Student</span>
-                  <span className="text-slate-800 font-medium">{certModal.student?.first_name} {certModal.student?.last_name}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Course</span>
-                  <span className="text-slate-800 font-medium text-right max-w-40">{certModal.course?.title}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Final Score</span>
-                  <span className={`font-bold ${certModal.score >= 80 ? 'text-green-600' : 'text-amber-600'}`}>{certModal.score}%</span>
-                </div>
+                {[
+                  ['Student', `${certModal.student?.first_name} ${certModal.student?.last_name}`],
+                  ['Course',  certModal.course?.title || '—'],
+                  ['Score',   `${certModal.score}%`],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between text-sm">
+                    <span className="text-slate-500">{label}</span>
+                    <span className="text-slate-800 font-medium text-right max-w-[200px]">{value}</span>
+                  </div>
+                ))}
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setCertModal(null)} className="flex-1 border border-slate-200 text-slate-600 text-sm py-2.5 rounded-xl hover:bg-slate-50 transition-colors">Cancel</button>
@@ -1382,10 +1401,10 @@ export default function AdminPanel() {
       )}
 
       {announceModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="font-semibold text-slate-800">Send Platform Announcement</h3>
+              <h3 className="font-semibold text-slate-800">Send Announcement</h3>
               <button onClick={() => setAnnounceModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={20} /></button>
             </div>
             <div className="p-6 space-y-4">
