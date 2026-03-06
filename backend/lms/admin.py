@@ -5,6 +5,11 @@ from .models import (
     Certificate, Announcement, GoetheExam, GoetheExamRequest
 )
 
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ['title', 'level', 'price']
+    search_fields = ['title', 'level']
+    
 @admin.register(GoetheExam)
 class GoetheExamAdmin(admin.ModelAdmin):
     list_display = ['level', 'location', 'exam_date_start', 'reg_open', 'reg_close', 'price_full', 'price_reduced']
